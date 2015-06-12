@@ -1,0 +1,291 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Chinese (P.R.C.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+#ifdef _WIN32
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#include ""res\\EncryptAlgorithm.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""afxres.rc""     // Standard components\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\EncryptAlgorithm.ico"
+IDI_ICON_FOLDER         ICON                    "res\\folder.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// MANIFEST
+//
+
+IDR_MANIFEST_XPSTYLE    MANIFEST                "res\\xpStyle.manifest"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 213, 79
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "关于梦想工作室"
+FONT 9, "宋体", 0, 0, 0x1
+BEGIN
+    LTEXT           "梦想加密器 1.0.0版",IDC_STATIC,40,6,112,8,SS_NOPREFIX
+    LTEXT           "版权所有 (C) 2015-2065",IDC_STATIC,40,16,112,8
+    DEFPUSHBUTTON   "确定",IDOK,154,6,51,13,WS_GROUP
+    LTEXT           "作者: 陈潇汀",IDC_STATIC,40,29,112,8
+    LTEXT           "欢迎光临梦想工作室网站",IDC_STATIC,40,58,112,8
+    LTEXT           "http://www.mxfz.net",IDC_URL_ABOUTBOX_LINK,57,67,83,8,SS_NOTIFY
+    ICON            IDR_MAINFRAME,IDC_STATIC,11,6,20,20
+    LTEXT           "个人博客",IDC_URL_ABOUTBOX_BLOGLINK,169,67,35,8,SS_NOTIFY
+    LTEXT           "QQ: 451292510",IDC_STATIC,40,37,54,8
+    LTEXT           "Email: xiaoting_chen2010@163.com",IDC_STATIC,40,45,134,8
+END
+
+IDD_DIALOG_MAIN DIALOGEX 0, 0, 384, 255
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "梦想加密器"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_EDIT_MAIN_PLAINTEXT,12,46,174,36,ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL
+    EDITTEXT        IDC_EDIT_MAIN_CIPHERTEXT,198,46,174,36,ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL
+    PUSHBUTTON      "清空明文",IDC_BUTTON_MAIN_CLEARPLAINTEXT,12,30,50,14
+    PUSHBUTTON      "清空密文",IDC_BUTTON_MAIN_CLEARCIPHERTEXT,65,30,50,14
+    PUSHBUTTON      "清空所有",IDC_BUTTON_MAIN_CLEARALLTEXT,118,30,50,14,BS_NOTIFY
+    CONTROL         "16进制",IDC_RADIO_MAIN_HEX,"Button",BS_AUTORADIOBUTTON | WS_GROUP,198,34,36,10
+    CONTROL         "8进制",IDC_RADIO_MAIN_OCTAL,"Button",BS_AUTORADIOBUTTON | BS_NOTIFY,234,34,32,10
+    CONTROL         "4进制",IDC_RADIO_MAIN_BINARY4,"Button",BS_AUTORADIOBUTTON | BS_NOTIFY,267,34,32,10
+    CONTROL         "2进制",IDC_RADIO_MAIN_BINARY,"Button",BS_AUTORADIOBUTTON | BS_NOTIFY,299,34,32,10
+    CONTROL         "原始字符",IDC_RADIO_MAIN_ORIGINALCHARACTER,"Button",BS_AUTORADIOBUTTON,331,34,42,10
+    CONTROL         "字符串加密",IDC_RADIO_MAIN_ENCRYPTTEXT,"Button",BS_AUTORADIOBUTTON | WS_GROUP,12,7,50,10
+    CONTROL         "文件加密",IDC_RADIO_MAIN_ENCRYPTFILE,"Button",BS_AUTORADIOBUTTON,198,7,50,10
+    CONTROL         "保留源文件",IDC_RADIO_MAIN_KEEPSOURCEFILE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,12,99,50,10
+    CONTROL         "替换源文件",IDC_RADIO_MAIN_REPLACESOURCEFILE,"Button",BS_AUTORADIOBUTTON,65,99,50,10
+    CONTROL         "单一文件加密",IDC_RADIO_MAIN_ENCRYPTSINGLEFILE,"Button",BS_AUTORADIOBUTTON | BS_NOTIFY | WS_GROUP,198,99,64,10
+    CONTROL         "文件夹(含子文件夹)加密",IDC_RADIO_MAIN_ENCRYPTFOLDER,"Button",BS_AUTORADIOBUTTON | BS_NOTIFY,270,99,101,10
+    ICON            IDI_ICON_FOLDER,IDC_STATIC_MAIN_SOURCEFILE,361,115,20,20
+    ICON            IDI_ICON_FOLDER,IDC_STATIC_MAIN_SOURCEFOLDER,361,131,20,20
+    ICON            IDI_ICON_FOLDER,IDC_STATIC_MAIN_OUTPUTFOLDER,361,147,20,20
+    CONTROL         "",IDC_TAB_MAIN_ENCRYPTALGORITHM,"SysTabControl32",0x0,12,171,359,58
+    PUSHBUTTON      "加密",IDC_BUTTON_MAIN_ENCRYPT,198,234,50,14
+    PUSHBUTTON      "解密",IDC_BUTTON_MAIN_DECRYPT,263,234,50,14
+    PUSHBUTTON      "关于",IDC_BUTTON_MAIN_ABOUT,327,234,50,14
+    LTEXT           "源文件:",IDC_STATIC,12,113,28,8
+    LTEXT           "输出路径:",IDC_STATIC,12,145,36,8
+    LTEXT           "源文件夹:",IDC_STATIC,12,129,36,8
+    EDITTEXT        IDC_EDIT_MAIN_SOURCEFILE,50,110,310,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_MAIN_SOURCEFOLDER,50,126,310,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_MAIN_OUTPUTFOLDER,50,142,310,14,ES_AUTOHSCROLL
+    LTEXT           "加密: 99999999ms",IDC_STATIC,7,240,62,8
+    LTEXT           "=>",IDC_STATIC_MAIN_ENCRYPTDECRYPT,186,60,12,8
+    GROUPBOX        "字符串加密",IDC_STATIC,7,20,370,66
+    GROUPBOX        "文件加密",IDC_STATIC,7,88,370,71
+    GROUPBOX        "加密算法",IDC_STATIC,7,162,370,70,BS_NOTIFY
+    LTEXT           "密文显示:",IDC_STATIC,198,26,36,8
+END
+
+IDD_DIALOG_SYMMETRYDES DIALOGEX 0, 0, 355, 35
+STYLE DS_SETFONT | WS_CHILD | WS_SYSMENU
+FONT 9, "宋体", 0, 0, 0x1
+BEGIN
+    CONTROL         "DES",IDC_RADIO_SYMMETRYDES_DES,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,58,3,28,10
+    CONTROL         "3DES",IDC_RADIO_SYMMETRYDES_3DES,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,115,3,32,10
+    CONTROL         "ECB",IDC_RADIO_SYMMETRYDES_DESECB,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,210,3,28,10
+    CONTROL         "CBC",IDC_RADIO_SYMMETRYDES_DESCBC,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,238,3,28,10
+    CONTROL         "CFB",IDC_RADIO_SYMMETRYDES_DESCFB,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,266,3,28,10
+    CONTROL         "OFB",IDC_RADIO_SYMMETRYDES_DESOFB,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,294,3,28,10
+    CONTROL         "CTR",IDC_RADIO_SYMMETRYDES_DESCTR,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,322,3,28,10
+    EDITTEXT        IDC_EDIT_SYMMETRYDES_INITIALVALUE,58,15,84,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_SYMMETRYDES_CIPHERKEY,210,15,84,14,ES_AUTOHSCROLL
+    LTEXT           "DES算法:",IDC_STATIC,11,4,33,8
+    LTEXT           "模式:",IDC_STATIC,183,4,22,8
+    LTEXT           "初始向量值:",IDC_STATIC_SYMMETRYDES_INITIALVALUE,11,18,45,8
+    LTEXT           "密钥1:",IDC_STATIC,183,18,24,8
+END
+
+IDD_DIALOG_SYMMETRY DIALOGEX 0, 0, 357, 49
+STYLE DS_SETFONT | WS_CHILD | WS_SYSMENU
+FONT 9, "宋体", 0, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_TAB_SYMMETRY_ENCRYPTALGORITHM,"SysTabControl32",0x0,0,0,357,47
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 205
+        BOTTOMMARGIN, 77
+    END
+
+    IDD_DIALOG_MAIN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 377
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 248
+    END
+
+    IDD_DIALOG_SYMMETRYDES, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 33
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Chinese (P.R.C.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904e4"
+        BEGIN
+            VALUE "CompanyName", "TODO: <Company name>"
+            VALUE "FileDescription", "TODO: <File description>"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "EncryptAlgorithm.exe"
+            VALUE "LegalCopyright", "TODO: (c) <Company name>.  All rights reserved."
+            VALUE "OriginalFilename", "EncryptAlgorithm.exe"
+            VALUE "ProductName", "TODO: <Product name>"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_ABOUTBOX            "&About EncryptAlgorithm..."
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#include "res\EncryptAlgorithm.rc2"  // non-Microsoft Visual C++ edited resources
+#include "afxres.rc"     // Standard components
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
