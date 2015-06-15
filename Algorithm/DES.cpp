@@ -189,13 +189,29 @@ bool DES::CBC(char *IV, char *Out, char *In, long datalen, const char *Key, int 
 	}
 	else
 	{
-		for(long i=0,j=datalen>>3; i<j; ++i,Out+=8,In+=8) 
+		long i, j;
+		if(bDecrypt == DES_ENCRYPT)//加密
 		{
-			SDES(Out, In,  &SubKey[0], bDecrypt);
-			SDES(Out, Out, &SubKey[1], !bDecrypt);
-			SDES(Out, Out, &SubKey[0], bDecrypt);
-			In += 8;
-			Xor(In, Out, 8);
+			Xor(In, IV, 8);
+			for(i=0,j=datalen>>3; i<j; ++i, Out+=8) 
+			{
+				SDES(Out, In, &SubKey[0], bDecrypt);
+				SDES(Out, Out, &SubKey[1], !bDecrypt);
+				SDES(Out, Out, &SubKey[0], bDecrypt);
+				In += 8;
+				Xor(In, Out, 8);
+			}
+		}
+		else//解密
+		{
+			for(i=0,j=datalen>>3; i<j; ++i, Out+=8, In+=8) 
+			{
+				SDES(Out, In, &SubKey[0], bDecrypt);
+				SDES(Out, Out, &SubKey[1], !bDecrypt);
+				SDES(Out, Out, &SubKey[0], bDecrypt);
+				Xor(Out, IV, 8);
+				memcpy(IV, In, 8);
+			}
 		}
 	}
 	return true;
@@ -223,7 +239,7 @@ bool DES::CFB(char *IV, char *Out, char *In, long datalen, const char *Key, int 
 		{
 			for(i=0; i<datalen; ++i, ++Out, ++In)
 			{
-				SDES(Out, IV, &SubKey[0], !bDecrypt); //注意使用的是加密函数!
+				SDES(Out, IV, &SubKey[0], !bDecrypt);
 				Xor(Out, In, 1);
 				RotateL(IV, 8, 1);
 				IV[7] = In[0];
@@ -232,14 +248,30 @@ bool DES::CFB(char *IV, char *Out, char *In, long datalen, const char *Key, int 
 	}
 	else
 	{
-		for(long i=0,j=datalen>>3; i<j; ++i, ++Out, ++In) 
+		long i;
+		if(bDecrypt == DES_ENCRYPT)//加密		
 		{
-			SDES(Out, In,  &SubKey[0], bDecrypt);
-			SDES(Out, Out, &SubKey[1], !bDecrypt);
-			SDES(Out, Out, &SubKey[0], bDecrypt);
-			Xor(Out, In, 1);
-			RotateL(IV, 8, 1);
-			IV[7] = Out[0];
+			for(i=0; i<datalen; ++i, ++Out, ++In)
+			{
+				SDES(Out, IV, &SubKey[0], bDecrypt);
+				SDES(Out, Out, &SubKey[1], !bDecrypt);
+				SDES(Out, Out, &SubKey[0], bDecrypt);
+				Xor(Out, In, 1);
+				RotateL(IV, 8, 1);
+				IV[7] = Out[0];
+			}
+		}
+		else//解密
+		{
+			for(i=0; i<datalen; ++i, ++Out, ++In)
+			{
+				SDES(Out, IV, &SubKey[0], !bDecrypt);
+				SDES(Out, Out, &SubKey[1], bDecrypt);
+				SDES(Out, Out, &SubKey[0], !bDecrypt);
+				Xor(Out, In, 1);
+				RotateL(IV, 8, 1);
+				IV[7] = In[0];
+			}
 		}
 	}
 	return true;
@@ -250,7 +282,7 @@ bool DES::OFB(char *IV, char *Out, char *In, long datalen, const char *Key, int 
 	if(!(Out && In && Key))
 		return false;
 	SetKey(Key, keylen);
-	char t;
+	char t = 0x00;
 	if(!Is3DES)
 	{
 		for(long i=0; i<datalen; ++i, ++Out, ++In)
@@ -264,13 +296,13 @@ bool DES::OFB(char *IV, char *Out, char *In, long datalen, const char *Key, int 
 	}
 	else
 	{
-		for(long i=0,j=datalen>>3; i<j; ++i, ++Out, ++In) 
+		for(long i=0; i<datalen; ++i, ++Out, ++In)
 		{
-			SDES(Out, In,  &SubKey[0], DES_ENCRYPT);
-			SDES(Out, Out, &SubKey[1], DES_ENCRYPT);
-			SDES(Out, Out, &SubKey[0], DES_ENCRYPT);
-			Xor(Out, In, 1);
+			SDES(Out, IV, &SubKey[0], DES_ENCRYPT);//注意使用的是加密函数
+			SDES(Out, Out, &SubKey[1], DES_ENCRYPT);//注意使用的是加密函数!
+			SDES(Out, Out, &SubKey[0], DES_ENCRYPT);//注意使用的是加密函数!
 			t = Out[0];
+			Xor(Out, In, 1);
 			RotateL(IV, 8, 1);
 			IV[7] = t;
 		}
@@ -291,7 +323,7 @@ bool DES::CTR(char *CNT, char *Out, char *In, long datalen, const char *Key, int
 	{
 		for(i=0, j=datalen>>3; i<j; ++i, Out+=8, In+=8)
 		{
-			SDES(Out, CNT, &SubKey[0], DES_ENCRYPT);
+			SDES(Out, CNT, &SubKey[0], DES_ENCRYPT);	//注意使用的是加密函数!
 			Xor(Out, In, 8);
 			count = atol(CNT);
 //			cnt = (++cnt) % 0x10000000000000000;
@@ -300,14 +332,14 @@ bool DES::CTR(char *CNT, char *Out, char *In, long datalen, const char *Key, int
 	}
 	else
 	{   // 3次DES 加密:加(key0)-解(key1)-加(key0) 解密::解(key0)-加(key1)-解(key0)
-		for(i=0,j=datalen>>3; i<j; ++i,Out+=8,In+=8) 
+		for(i=0, j=datalen>>3; i<j; ++i, Out+=8, In+=8)
 		{
-			SDES(Out, CNT,  &SubKey[0], DES_ENCRYPT);
-			SDES(Out, Out, &SubKey[1], DES_ENCRYPT);
-			SDES(Out, Out, &SubKey[0], DES_ENCRYPT);
-			Xor(Out, In, 1);
+			SDES(Out, CNT, &SubKey[0], DES_ENCRYPT);	//注意使用的是加密函数!
+			SDES(Out, Out, &SubKey[1], DES_ENCRYPT);	//注意使用的是加密函数!
+			SDES(Out, Out, &SubKey[0], DES_ENCRYPT);	//注意使用的是加密函数!
+			Xor(Out, In, 8);
 			count = atol(CNT);
-//			cnt = (++cnt) % 0x10000000000000000;
+			//			cnt = (++cnt) % 0x10000000000000000;
 			ltoa(count, CNT, 64);
 		}
 	}

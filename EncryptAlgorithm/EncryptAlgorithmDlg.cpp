@@ -109,14 +109,31 @@ HBRUSH CAboutDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 // CEncryptAlgorithmDlg dialog
 const CString CEncryptAlgorithmDlg::STATIC_CONST_CSTR_ENCRYPTARROW = _T("=>");
 const CString CEncryptAlgorithmDlg::STATIC_CONST_CSTR_DECRYPTARROW = _T("<=");
+const CString CEncryptAlgorithmDlg::STATIC_CONST_CSTR_ENCRYPTDECRYPTFOLDERMARK = _T("encrypt|decrypt");
+const CString CEncryptAlgorithmDlg::STATIC_CONST_CSTR_ENCRYPTFOLDER = _T("encrypt\\");
+const CString CEncryptAlgorithmDlg::STATIC_CONST_CSTR_DECRYPTFOLDER = _T("decrypt\\");
+const long CEncryptAlgorithmDlg::STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH = 0xFF;		//扩展256个byte
+
+/************************************************************************/
+/*    字符串	mengxiang
+/*    MD5 16位 小写	699fcb5e21845872
+/*    MD5 16位 大写	699FCB5E21845872
+/*    MD5 32位 小写	9d439b82699fcb5e218458726b69bec1
+/*    MD5 32位 大写	9D439B82699FCB5E218458726B69BEC1                                                                  */
+/************************************************************************/
+const CString CEncryptAlgorithmDlg::STATIC_CONST_CSTR_MD5TEXT = _T("mengxiang");
+const CString CEncryptAlgorithmDlg::STATIC_CONST_CSTR_MD5LOWER16 = _T("699fcb5e21845872");
+const CString CEncryptAlgorithmDlg::STATIC_CONST_CSTR_MD5UPER16 = _T("699FCB5E21845872");
+const CString CEncryptAlgorithmDlg::STATIC_CONST_CSTR_MD5LOWER32 = _T("9d439b82699fcb5e218458726b69bec1");
+const CString CEncryptAlgorithmDlg::STATIC_CONST_CSTR_MD5UPER32 = _T("9D439B82699FCB5E218458726B69BEC1");
 
 char digits[]= {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-std::string 
+CString
 DataToUnsignedString(const char* dataIn, long dataInLen, int shift)
 {
-	std::string str;
+	CString cstr;
 	if (NULL == dataIn || 0x00 == dataInLen) {
-		return str;
+		return cstr;
 	}
 	char  buf[8] = {0x00};
 	char* pBuf = NULL;
@@ -158,12 +175,12 @@ DataToUnsignedString(const char* dataIn, long dataInLen, int shift)
 		int strLen = 8 - charPos;
 		pBuf = pBuf+charPos;
 		while(strLen) {
-			str.push_back(*pBuf);
+			cstr.AppendChar(*pBuf);
 			pBuf++;
 			strLen--;
 		}	
 	}
-	return str;
+	return cstr;
 }
 
 bool 
@@ -217,6 +234,125 @@ UnsignedStringToData(const char* dataIn, int shift, char* dataOut, long dataOutL
 	return true;
 }
 
+void Split(char *src, const char *separator, char **dest, int *num)
+{
+	char *pNext;
+	int count = 0;
+
+	if (src == NULL || strlen(src) == 0) return;
+	if (separator == NULL || strlen(separator) == 0) return; 
+
+	pNext = strtok(src,separator);
+
+	while(pNext != NULL)
+	{
+		*dest++ = pNext;
+		++count;
+		pNext = strtok(NULL,separator);
+	}
+
+	*num = count;
+}
+
+void Split(const string& src, const string& separator, vector<string>* dest)
+{
+	if (NULL == dest) {
+		return;
+	}
+	dest->clear();
+	string str = src;
+	string substring;
+	string::size_type start = 0, index;
+
+	do
+	{
+		index = str.find_first_of(separator,start);
+		if (index != string::npos)
+		{    
+			substring = str.substr(start,index-start);
+			dest->push_back(substring);
+			start = str.find_first_not_of(separator,index);
+			if (start == string::npos) return;
+		}
+	}while(index != string::npos);
+
+	//the last token
+	substring = str.substr(start);
+	dest->push_back(substring);
+}
+
+void Split(const CString& src, const CString& separator, vector<CString>* dest)	//C++
+{
+	if (NULL == dest) {
+		return;
+	}
+	dest->clear();
+	vector<string> vStrdest;
+	Split(LPCSTR(src), LPCSTR(separator), &vStrdest);
+	for (int iCnt=0x00; iCnt<(int)vStrdest.size(); iCnt++) {
+		dest->push_back(vStrdest[iCnt].c_str());
+	}
+}
+
+
+BOOL CreateMultiDirectory(const CString& szPath)
+{
+	//存放目录的数组
+	vector<CString> vFolder;
+	Split(szPath, _T("\\"), &vFolder);
+
+	//遍历存放目录的数组,创建每层目录
+	CString cstrCreatePath;
+	for (int iCnt=0x00; iCnt<(int)vFolder.size(); iCnt++) {
+		cstrCreatePath += vFolder[iCnt] + _T("\\") ;
+		if(FALSE == ::PathIsDirectory(cstrCreatePath)) {   
+			if (FALSE == ::CreateDirectory(cstrCreatePath, NULL)) {
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
+int CALLBACK BrowseCallbackProc(HWND hWnd, UINT uMsg, LPARAM , LPARAM lpData)   
+{
+	if(uMsg == BFFM_INITIALIZED) {
+		CTreeCtrl	treePath;
+		HTREEITEM	hItemSel;
+		::SendMessage(hWnd, BFFM_SETSELECTION, TRUE, lpData);
+		treePath.SubclassWindow(::GetDlgItem(hWnd, 0x3741));
+		hItemSel	= treePath.GetSelectedItem();
+		treePath.Expand(hItemSel, TVE_COLLAPSE);
+		treePath.UnsubclassWindow();
+	} 
+	return 0;  
+}
+vector<CString> test;
+void TraverseDir(CString& cstrDir, vector<CString>* pvFilePath)
+{
+	if (NULL == pvFilePath || true == cstrDir.IsEmpty()) {
+		return;
+	}
+	CFileFind cFileFind;
+	if (cstrDir.Right(1) != "\\") {
+		cstrDir += "\\";
+	}
+	cstrDir += "*.*";
+	BOOL bTraverse = cFileFind.FindFile(cstrDir);
+	while (bTraverse) {
+		bTraverse = cFileFind.FindNextFile();
+		if (TRUE == cFileFind.IsDots()) {
+			// skip . and .. files;
+			continue;
+		}
+		if (TRUE == cFileFind.IsDirectory()) {
+			TraverseDir(cFileFind.GetFilePath(), pvFilePath);
+		}
+		else {
+			pvFilePath->push_back(cFileFind.GetFilePath());
+		}
+	}
+}
 void 
 CEncryptAlgorithmDlg::UpdateCtrl()
 {
@@ -234,20 +370,20 @@ CEncryptAlgorithmDlg::PreTranslateMessage(MSG* pMsg)
 void 
 CEncryptAlgorithmDlg::OnInitCtrl()
 {
-	((CButton* )(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTTEXT)))->SetCheck(BST_CHECKED);				//默认使用文体加密
+	((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTTEXT)))->SetCheck(BST_CHECKED);				//默认使用文体加密
 
 	GetDlgItem(IDC_STATIC_MAIN_ENCRYPTDECRYPT)->SetWindowText("");								 
 	GetDlgItem(IDC_STATIC_MAIN_ENCRYPTDECRYPT)->ShowWindow(SW_HIDE);							//不可见
 
-	((CButton* )(GetDlgItem(IDC_RADIO_MAIN_HEX)))->SetCheck(BST_CHECKED);						//默认使用十六进制
-	((CButton* )(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->SetCheck(BST_CHECKED);			//默认使用保留源文件
-	((CButton* )(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTSINGLEFILE)))->SetCheck(BST_CHECKED);			//默认使用单一文件加密
+	((CButton*)(GetDlgItem(IDC_RADIO_MAIN_HEX)))->SetCheck(BST_CHECKED);						//默认使用十六进制
+	((CButton*)(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->SetCheck(BST_CHECKED);			//默认使用保留源文件
+	((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTSINGLEFILE)))->SetCheck(BST_CHECKED);			//默认使用单一文件加密
 	
 	//Init TabControl
 	CTabCtrl* pCTabCtrl = (CTabCtrl*)GetDlgItem(IDC_TAB_MAIN_ENCRYPTALGORITHM);
 	pCTabCtrl->InsertItem(MAIN_TABLE_CONTROL_ENCRYPT_SYMMETRY, _T("对称"));
-	pCTabCtrl->InsertItem(MAIN_TABLE_CONTROL_ENCRYPT_UNSYMMETRY, _T("非对称"));
-	pCTabCtrl->InsertItem(MAIN_TABLE_CONTROL_ENCRYPT_HASH, _T("Hash"));
+// 	pCTabCtrl->InsertItem(MAIN_TABLE_CONTROL_ENCRYPT_UNSYMMETRY, _T("非对称"));
+// 	pCTabCtrl->InsertItem(MAIN_TABLE_CONTROL_ENCRYPT_HASH, _T("Hash"));
 
 	CRect rect;
 	m_tab.GetClientRect(&rect);//获得TAB控件的坐标
@@ -277,7 +413,7 @@ CEncryptAlgorithmDlg::OnInitCtrl()
 void 
 CEncryptAlgorithmDlg::UpdateMixCtrlEnable()
 {
-	bool bEncryptText = BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTTEXT)))->GetCheck()?true:false;
+	bool bEncryptText = BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTTEXT)))->GetCheck()?true:false;
 	
 	GetDlgItem(IDC_BUTTON_MAIN_CLEARPLAINTEXT)->EnableWindow(bEncryptText);
 	GetDlgItem(IDC_BUTTON_MAIN_CLEARCIPHERTEXT)->EnableWindow(bEncryptText);
@@ -289,21 +425,21 @@ CEncryptAlgorithmDlg::UpdateMixCtrlEnable()
 	GetDlgItem(IDC_EDIT_MAIN_PLAINTEXT)->EnableWindow(bEncryptText);
 	GetDlgItem(IDC_EDIT_MAIN_CIPHERTEXT)->EnableWindow(bEncryptText);
 
-	bool bEncryptFile = BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFILE)))->GetCheck()?true:false;
+	bool bEncryptFile = BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFILE)))->GetCheck()?true:false;
 	GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)->EnableWindow(bEncryptFile);
 	GetDlgItem(IDC_RADIO_MAIN_REPLACESOURCEFILE)->EnableWindow(bEncryptFile);
 	GetDlgItem(IDC_RADIO_MAIN_ENCRYPTSINGLEFILE)->EnableWindow(bEncryptFile);
 	GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFOLDER)->EnableWindow(bEncryptFile);
 	
-	bool bEncryptSingleFile = BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTSINGLEFILE)))->GetCheck()?true:false;
+	bool bEncryptSingleFile = BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTSINGLEFILE)))->GetCheck()?true:false;
 	GetDlgItem(IDC_EDIT_MAIN_SOURCEFILE)->EnableWindow(bEncryptFile&&bEncryptSingleFile);
 	GetDlgItem(IDC_STATIC_MAIN_SOURCEFILE)->EnableWindow(bEncryptFile&&bEncryptSingleFile);
 
-	bool bEncryptFolder = BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFOLDER)))->GetCheck()?true:false;
+	bool bEncryptFolder = BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFOLDER)))->GetCheck()?true:false;
 	GetDlgItem(IDC_EDIT_MAIN_SOURCEFOLDER)->EnableWindow(bEncryptFile&&bEncryptFolder);
 	GetDlgItem(IDC_STATIC_MAIN_SOURCEFOLDER)->EnableWindow(bEncryptFile&&bEncryptFolder);
 
-	bool bKeepSourceFile = BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->GetCheck()?true:false;
+	bool bKeepSourceFile = BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->GetCheck()?true:false;
 	GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->EnableWindow(bEncryptFile&&bKeepSourceFile);
 	GetDlgItem(IDC_STATIC_MAIN_OUTPUTFOLDER)->EnableWindow(bEncryptFile&&bKeepSourceFile);
 }
@@ -314,126 +450,125 @@ CEncryptAlgorithmDlg::CipherTextDisplay()
 	if (0x00 == m_lDataOutLen || NULL == m_pchDataOut) {
 		return;
 	}
-	char* test1 = "BCC13D18CA46463";
-	char* test2 = "13314023321214244144143";
-	char* test3 = "233030010331012030221012101203";
-	char* test4 = "101111001100000100111101000110001100101001000110010001100011";
-	
-	long ltest1 = strlen(test1)/2;
-	ltest1 += 0x00==strlen(test1)%2?0x00:0x01;
-	char* ptest1 = new char[ltest1];
-	long ltest2 = strlen(test2)/3;
-	ltest2 += 0x00==strlen(test2)%3?0x00:0x01;
-	char* ptest2 = new char[ltest2];
-	long ltest3 = strlen(test3)/4;
-	ltest3 += 0x00==strlen(test3)%4?0x00:0x01;
-	char* ptest3 = new char[ltest3];
-	long ltest4 = strlen(test4)/8;
-	ltest4 += 0x00==strlen(test4)%8?0x00:0x01;
-	char* ptest4 = new char[ltest4];
-			
-	bool test;
-	test = UnsignedStringToData(test1, 16, ptest1, ltest1);
-	test = UnsignedStringToData(test2, 8, ptest2, ltest2);
-	test = UnsignedStringToData(test3, 4, ptest3, ltest3);
-	test = UnsignedStringToData(test4, 2, ptest4, ltest4);
-
-	std::string strDataOut;
-	if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_HEX)))->GetCheck()) {
-		strDataOut = DataToUnsignedString(m_pchDataOut, m_lDataOutLen, 16);	//十六进制
+	CString cstrDataOut;
+	if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_HEX)))->GetCheck()) {
+		cstrDataOut = DataToUnsignedString(m_pchDataOut, m_lDataOutLen, 16);	//十六进制
 	}
-	else if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_OCTAL)))->GetCheck()) {
-		strDataOut = DataToUnsignedString(m_pchDataOut, m_lDataOutLen, 8);	//八进制
+	else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_OCTAL)))->GetCheck()) {
+		cstrDataOut = DataToUnsignedString(m_pchDataOut, m_lDataOutLen, 8);	//八进制
 	}
-	else if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_BINARY4)))->GetCheck()) {
-		strDataOut = DataToUnsignedString(m_pchDataOut, m_lDataOutLen, 4);	//四进制
+	else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_BINARY4)))->GetCheck()) {
+		cstrDataOut = DataToUnsignedString(m_pchDataOut, m_lDataOutLen, 4);	//四进制
 	}
-	else if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_BINARY)))->GetCheck()) {
-		strDataOut = DataToUnsignedString(m_pchDataOut, m_lDataOutLen, 2);	//二进制
+	else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_BINARY)))->GetCheck()) {
+		cstrDataOut = DataToUnsignedString(m_pchDataOut, m_lDataOutLen, 2);	//二进制
 	}
-	else if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_ORIGINALCHARACTER)))->GetCheck()) {
-		strDataOut = m_pchDataOut;
+	else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ORIGINALCHARACTER)))->GetCheck()) {
+		cstrDataOut = m_pchDataOut;
 	}
 	else {
 		;
 	}
 
-	GetDlgItem(IDC_EDIT_MAIN_CIPHERTEXT)->SetWindowText(strDataOut.c_str());	
+	GetDlgItem(IDC_EDIT_MAIN_CIPHERTEXT)->SetWindowText(cstrDataOut);	
 }
 
 bool 
 CEncryptAlgorithmDlg::OnEncryptDecrypt(bool bEncryp)
 {	
-	long dataInLen = 0x00;
-	char *dataIn = NULL;
-	if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTTEXT)))->GetCheck()) {
-		//字符串加解密
-		CString cstrDataIn;
-		if (true == bEncryp) {
-			//字符串加密
-			GetDlgItem(IDC_EDIT_MAIN_PLAINTEXT)->GetWindowText(cstrDataIn);
-			dataInLen = cstrDataIn.GetLength()+1;
-			dataIn = new char[dataInLen];
-			memset(dataIn, 0x00, sizeof(char)*(dataInLen));
-			memcpy(dataIn, cstrDataIn.GetBuffer(cstrDataIn.GetLength()), dataInLen-1);
+	bool bSuccess = false;
+	if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTTEXT)))->GetCheck()) {
+		CString cstrDataText;
+		true==bEncryp?GetDlgItem(IDC_EDIT_MAIN_PLAINTEXT)->GetWindowText(cstrDataText):GetDlgItem(IDC_EDIT_MAIN_CIPHERTEXT)->GetWindowText(cstrDataText);
+		bSuccess = OnEncryptDecryptText(bEncryp, cstrDataText);
+	}
+	else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFILE)))->GetCheck()) {
+		//文件加解密
+		vector<CString> vFileFailed;
+		vector<CString> vEncryptFilePath;
+		if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTSINGLEFILE)))->GetCheck()) {
+			CString cstrSourceFile;
+			GetDlgItem(IDC_EDIT_MAIN_SOURCEFILE)->GetWindowText(cstrSourceFile);
+			Split(cstrSourceFile, _T("|"), &vEncryptFilePath);
+		}
+		else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFOLDER)))->GetCheck()) {
+			CString cstrSourceFolder;
+			GetDlgItem(IDC_EDIT_MAIN_SOURCEFOLDER)->GetWindowText(cstrSourceFolder);
+			test.clear();
+			TraverseDir(cstrSourceFolder, &vEncryptFilePath);
 		}
 		else {
-			//字符串解密
-			GetDlgItem(IDC_EDIT_MAIN_CIPHERTEXT)->GetWindowText(cstrDataIn);
-			int shift = 0x00;
-			int buffLen = 0x00;
-			if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_HEX)))->GetCheck()) {
-				shift = 0x10;	//十六进制
-				buffLen = 0x02;
-			}
-			else if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_OCTAL)))->GetCheck()) {
-				shift = 0x08;	//八进制
-				buffLen = 0x03;
-			}
-			else if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_BINARY4)))->GetCheck()) {
-				shift = 0x04;	//四进制
-				buffLen = 0x04;
-			}
-			else if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_BINARY)))->GetCheck()) {
-				shift = 0x02;	//二进制
-				buffLen = 0x08;
-			}
-			else if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_ORIGINALCHARACTER)))->GetCheck()) {
-				MessageBox(_T("使用原始字符解密可能会失败!"));
-				if (NULL != dataIn) {
-					delete[] dataIn;
-					dataIn = NULL;
-				}
-				return false;
-			}
-			else {
-				;
-			}
-			dataInLen = cstrDataIn.GetLength()/buffLen;
-			dataInLen += 0x00==cstrDataIn.GetLength()%buffLen?0x00:0x01;
-			dataIn = new char[dataInLen];
-			memset(dataIn, 0x00, sizeof(char)*(dataInLen));
-			if (false == UnsignedStringToData(cstrDataIn.GetBuffer(cstrDataIn.GetLength()), shift, dataIn, dataInLen)) {
-				CString cstrMsg;
-				cstrMsg.Format(_T("%ld进制字符串转换成数据失败!"));
-				MessageBox(cstrMsg);
-				if (NULL != dataIn) {
-					delete[] dataIn;
-					dataIn = NULL;
-				}
-				return false;
+			;
+		}
+		for (int iCnt=0x00; iCnt<(int)vEncryptFilePath.size(); iCnt++) {
+			if (false == OnEncryptDecryptFile(bEncryp, vEncryptFilePath[iCnt])) {
+				//记录失败的文件
+				vFileFailed.push_back(vEncryptFilePath[iCnt]);
 			}
 		}
+		bSuccess = vFileFailed.empty();	//失败记录为空，则全部成功
 	}
+	else {
+		;
+	}
+	return bSuccess;
+}
 
+bool 
+CEncryptAlgorithmDlg::OnEncryptDecryptText(bool bEncryp, CString cstrDataText)
+{
+	long dataInLen = 0x00;
+	char *dataIn = NULL;
+	//字符串加解密
+	if (true == bEncryp) {
+		//字符串加密
+		dataInLen = cstrDataText.GetLength()+1;
+		dataIn = new char[dataInLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH];
+		memset(dataIn, 0x00, sizeof(char)*(dataInLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH));
+		strcpy(dataIn, cstrDataText.GetBuffer(cstrDataText.GetLength()));
+	}
+	else {
+		//字符串解密
+		int shift = 0x00;
+		int buffLen = 0x00;
+		if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_HEX)))->GetCheck()) {
+			shift = 0x10;	//十六进制
+			buffLen = 0x02;
+		}
+		else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_OCTAL)))->GetCheck()) {
+			shift = 0x08;	//八进制
+			buffLen = 0x03;
+		}
+		else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_BINARY4)))->GetCheck()) {
+			shift = 0x04;	//四进制
+			buffLen = 0x04;
+		}
+		else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_BINARY)))->GetCheck()) {
+			shift = 0x02;	//二进制
+			buffLen = 0x08;
+		}
+		else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ORIGINALCHARACTER)))->GetCheck()) {
+			MessageBox(_T("使用原始字符解密可能会失败!"));
+			return false;
+		}
+		else {
+			;
+		}
+		dataInLen = cstrDataText.GetLength()/buffLen;
+		dataInLen += 0x00==cstrDataText.GetLength()%buffLen?0x00:0x01;
+		dataIn = new char[dataInLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH];
+		memset(dataIn, 0x00, sizeof(char)*(dataInLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH));
+		UnsignedStringToData(cstrDataText.GetBuffer(cstrDataText.GetLength()), shift, dataIn, dataInLen);
+	}
 	char *dataOut = NULL;
 	long dataOutLen = 0x00;
 	bool bSuccess = false;
 
 	dataOutLen = (dataInLen/8+(true==bEncryp?1:0))*8;
-	dataOut = new char[dataOutLen];
-	memset(dataOut, 0x00, sizeof(char)*(dataOutLen));
+	dataOut = new char[dataOutLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH];
+	memset(dataOut, 0x00, sizeof(char)*(dataOutLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH));
 
+	//设置加解密参数
 	SetEncryptDecrypt();
 	//加解密
 	bSuccess = true==bEncryp?EncryptIF::Instance()->Encrypt(dataIn, dataInLen, dataOut):EncryptIF::Instance()->Decrypt(dataIn, dataInLen, dataOut);
@@ -444,41 +579,241 @@ CEncryptAlgorithmDlg::OnEncryptDecrypt(bool bEncryp)
 			delete[] dataIn;
 			dataIn = NULL;
 		}
+
+		if (NULL != dataOut) {
+			delete[] dataOut;
+			dataOut = NULL;
+		}
 		return false;
 	}
 
-	if (BST_CHECKED == ((CButton* )(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTTEXT)))->GetCheck()) {
-		//字符串加解密
-		if (true == bEncryp) {
-			//字符串加密
-			if (NULL != m_pchDataOut) {
-				delete[] m_pchDataOut;
-				m_pchDataOut = NULL;
-				m_lDataOutLen = 0x00;
-			}
-			m_lDataOutLen = dataOutLen;
-			m_pchDataOut = new char[m_lDataOutLen];
-			memset(m_pchDataOut, 0x00, sizeof(char)*m_lDataOutLen);
-			memcpy(m_pchDataOut, dataOut, m_lDataOutLen);
-
-			GetDlgItem(IDC_STATIC_MAIN_ENCRYPTDECRYPT)->SetWindowText(STATIC_CONST_CSTR_ENCRYPTARROW);								 
-			GetDlgItem(IDC_STATIC_MAIN_ENCRYPTDECRYPT)->ShowWindow(SW_SHOW);
-
-			//显示密文
-			CipherTextDisplay();
+	//加解密成功
+	if (true == bEncryp) {
+		//字符串加密
+		if (NULL != m_pchDataOut) {
+			delete[] m_pchDataOut;
+			m_pchDataOut = NULL;
+			m_lDataOutLen = 0x00;
 		}
-		else {
-			//字符串解密
-			GetDlgItem(IDC_STATIC_MAIN_ENCRYPTDECRYPT)->SetWindowText(STATIC_CONST_CSTR_DECRYPTARROW);								 
-			GetDlgItem(IDC_STATIC_MAIN_ENCRYPTDECRYPT)->ShowWindow(SW_SHOW);
+		m_lDataOutLen = dataOutLen;
+		m_pchDataOut = new char[m_lDataOutLen];
+		memset(m_pchDataOut, 0x00, sizeof(char)*m_lDataOutLen);
+		memcpy(m_pchDataOut, dataOut, m_lDataOutLen);
 
-			//显示明文
-			GetDlgItem(IDC_EDIT_MAIN_PLAINTEXT)->SetWindowText(dataOut);
-		}
+		GetDlgItem(IDC_STATIC_MAIN_ENCRYPTDECRYPT)->SetWindowText(STATIC_CONST_CSTR_ENCRYPTARROW);								 
+		GetDlgItem(IDC_STATIC_MAIN_ENCRYPTDECRYPT)->ShowWindow(SW_SHOW);
+
+		//显示密文
+		CipherTextDisplay();
 	}
+	else {
+		//字符串解密
+		GetDlgItem(IDC_STATIC_MAIN_ENCRYPTDECRYPT)->SetWindowText(STATIC_CONST_CSTR_DECRYPTARROW);								 
+		GetDlgItem(IDC_STATIC_MAIN_ENCRYPTDECRYPT)->ShowWindow(SW_SHOW);
+
+		//显示明文
+		GetDlgItem(IDC_EDIT_MAIN_PLAINTEXT)->SetWindowText(dataOut);
+	}
+
 	if (NULL != dataIn) {
 		delete[] dataIn;
 		dataIn = NULL;
+	}
+
+	if (NULL != dataOut) {
+		delete[] dataOut;
+		dataOut = NULL;
+	}
+	return bSuccess;
+}
+
+bool 
+CEncryptAlgorithmDlg::OnEncryptDecryptFile(bool bEncryp, CString cstrDataFile)
+{
+	long dataInLen = 0x00;
+	char *dataIn = NULL;
+	FileHeader sFileHeader;
+	static CFile s_file;		//只需要一个文件操作实例
+	static CFileException e;
+	long lFilePath = cstrDataFile.GetLength();
+	if (CFile::hFileNull != s_file.m_hFile) {
+		s_file.Close();
+	}
+	if (FALSE == s_file.Open(cstrDataFile, CFile::modeRead|CFile::typeBinary|CFile::shareDenyNone, &e)) {	//以二进制流文件写
+		//打开文件失败
+		CString cstrFormat;
+		TCHAR szError[1024] = {0x00};
+		e.GetErrorMessage(szError, 1024);
+		cstrFormat.Format(_T("打开文件失败!\r\n文件名:%s\r\n错误代码:%d\r\n错误信息:%s"),e.m_strFileName, e.m_cause, szError);
+		MessageBox(cstrFormat);
+		return false;
+	}
+	dataInLen = (long)s_file.GetLength() - (true==bEncryp?0x00:sizeof(FileHeader));
+	if (0 >= dataInLen) {
+		MessageBox(_T("请选择正确文件! \r\n")+cstrDataFile);
+		s_file.Close();
+		return false;
+	}
+	
+	if (false == bEncryp) {
+		//解密 读取文件头
+		s_file.Read(&sFileHeader, sizeof(sFileHeader));
+		if (0x00 != strcmp(sFileHeader.m_MD5Verify, STATIC_CONST_CSTR_MD5UPER32)) {
+			//认证未通过
+			MessageBox(_T("请选择正确的加密文件!\r\n")+cstrDataFile);
+			s_file.Close();
+			return false;
+		}
+	}
+
+	dataIn = new char[dataInLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH];
+	memset(dataIn, 0x00, sizeof(char)*(dataInLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH));
+	s_file.Read(dataIn, dataInLen);
+	s_file.Close();	//关闭源数据文件文件
+	
+	char *dataOut = NULL;
+	long dataOutLen = 0x00;
+	bool bSuccess = false;
+
+	dataOutLen = (dataInLen/8+(true==bEncryp?1:0))*8;
+	dataOut = new char[dataOutLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH];
+	memset(dataOut, 0x00, sizeof(char)*(dataOutLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH));
+	//设置加解密参数
+	SetEncryptDecrypt();
+	//加解密
+	bSuccess = true==bEncryp?EncryptIF::Instance()->Encrypt(dataIn, dataInLen, dataOut):EncryptIF::Instance()->Decrypt(dataIn, dataInLen, dataOut);
+	if (NULL != dataIn) {
+		delete[] dataIn;
+		dataIn = NULL;
+	}
+	if (false == bSuccess) {
+		true==bEncryp?MessageBox(_T("加密失败!")):MessageBox(_T("解密失败!"));
+
+		if (NULL != dataOut) {
+			delete[] dataOut;
+			dataOut = NULL;
+		}
+		return false;
+	}
+
+	//加解密成功
+	CString cstrOutputFolder;
+	CString cstrOutputFile;
+	if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->GetCheck()) {
+		GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->GetWindowText(cstrOutputFolder);
+		if (cstrOutputFolder.Right(1) != "\\") {
+			cstrOutputFolder += "\\";
+		}
+		int nPos = cstrOutputFolder.Find(STATIC_CONST_CSTR_ENCRYPTDECRYPTFOLDERMARK);
+		if (-1 != nPos) {
+			//去除encrypt|decrypt标识
+			cstrOutputFolder = cstrOutputFolder.Left(nPos);
+			cstrOutputFolder += true==bEncryp?STATIC_CONST_CSTR_ENCRYPTFOLDER:STATIC_CONST_CSTR_DECRYPTFOLDER;
+		}
+		if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFOLDER)))->GetCheck()) {
+			//文件夹加解密
+			CString cstrSourceFolder;
+			GetDlgItem(IDC_EDIT_MAIN_SOURCEFOLDER)->GetWindowText(cstrSourceFolder);
+			if (cstrSourceFolder.Right(1) != "\\") {
+				cstrSourceFolder += "\\";
+			}
+			CString cstrOutputFolderAdd = cstrDataFile.Left(cstrDataFile.Find(s_file.GetFileName()));
+			cstrOutputFolderAdd = cstrOutputFolderAdd.Right(cstrOutputFolderAdd.GetLength()-cstrSourceFolder.GetLength());
+			cstrOutputFolder += cstrOutputFolderAdd;
+		}
+		if (FALSE == CreateMultiDirectory(cstrOutputFolder)) {
+			if (NULL != dataOut) {
+				delete[] dataOut;
+				dataOut = NULL;
+			}
+			return false;
+		}
+		cstrOutputFile = cstrOutputFolder;
+		cstrOutputFile += s_file.GetFileName();
+	}
+	else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_REPLACESOURCEFILE)))->GetCheck()) {
+		cstrOutputFile = cstrDataFile;
+	}
+	else {
+		;
+	}
+
+	if (CFile::hFileNull != s_file.m_hFile) {
+		//关闭之前文件
+		s_file.Close();
+	}
+	if(FALSE == s_file.Open(cstrOutputFile, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareDenyWrite)) {
+		//打开文件失败
+		CString cstrFormat;
+		TCHAR szError[1024] = {0x00};
+		e.GetErrorMessage(szError, 1024);
+		cstrFormat.Format(_T("打开文件失败!\r\n文件名:%s\r\n错误代码:%d\r\n错误信息:%s"),e.m_strFileName, e.m_cause, szError);
+		MessageBox(cstrFormat);
+
+		if (NULL != dataOut) {
+			delete[] dataOut;
+			dataOut = NULL;
+		}
+		return false;
+	}
+	
+	if (true == bEncryp) {
+		//加密 收集加密文件头信息
+		FileHeader sFileHeaderCollect = {0x00};
+		CFileStatus status;
+		CFile::GetStatus(cstrDataFile, status);
+		CString cstrTime;
+		strcpy(sFileHeaderCollect.m_MD5Verify, STATIC_CONST_CSTR_MD5UPER32);
+		cstrTime = status.m_ctime.Format("%Y-%m-%d %H:%M:%S");
+		strcpy(sFileHeaderCollect.m_ctime, (LPSTR)(LPCTSTR)cstrTime);
+		cstrTime = status.m_mtime.Format("%Y-%m-%d %H:%M:%S");
+		strcpy(sFileHeaderCollect.m_mtime, (LPSTR)(LPCTSTR)cstrTime);
+		cstrTime = status.m_atime.Format("%Y-%m-%d %H:%M:%S");
+		strcpy(sFileHeaderCollect.m_atime, (LPSTR)(LPCTSTR)cstrTime);
+		sFileHeaderCollect.m_size = status.m_size;
+		sFileHeaderCollect.m_attribute = status.m_attribute;
+		sFileHeaderCollect._m_padding = status._m_padding;
+		sFileHeaderCollect.m_size = status.m_size;
+		sFileHeaderCollect.m_size = status.m_size;
+		sFileHeaderCollect.m_size = status.m_size;
+		CString cstrFileTitle = s_file.GetFileTitle();
+		CString cstrFileName = s_file.GetFileName();
+		CString cstrFileType;
+		int nPos = cstrFileName.Find(".");
+		if (-1 != nPos) {
+			cstrFileType = cstrFileName.Right(cstrFileName.GetLength()-(nPos+1));
+		}
+		strcpy(sFileHeaderCollect.m_szFileTitle, (LPSTR)(LPCTSTR)cstrFileTitle);
+		strcpy(sFileHeaderCollect.m_szFileType, (LPSTR)(LPCTSTR)cstrFileType);
+		GetEncryptLevelFromCtrl(&sFileHeaderCollect.byEncryptLevel1, &sFileHeaderCollect.byEncryptLevel2, &sFileHeaderCollect.byEncryptLevel3, &sFileHeaderCollect.byEncryptLevel4);
+
+		s_file.Write(&sFileHeaderCollect, sizeof(sFileHeaderCollect));	//写入文件头
+		s_file.Write(dataOut, dataOutLen);					//写入正文
+	}
+	else {
+		//解密
+		s_file.Write(dataOut, dataOutLen);					//写入解密数据
+		//关闭文件还原文件状态
+		if (CFile::hFileNull != s_file.m_hFile) {
+			s_file.Close();
+		}
+		CFileStatus statusRestore;
+		CFile::GetStatus(cstrOutputFile, statusRestore);
+		int Y,M,D,h,m,s;
+		sscanf(sFileHeader.m_ctime, "%d-%d-%d %d:%d:%d",&Y,&M,&D,&h,&m,&s);
+		statusRestore.m_ctime = CTime(Y,M,D,h,m,s);
+		sscanf(sFileHeader.m_mtime, "%d-%d-%d %d:%d:%d",&Y,&M,&D,&h,&m,&s);
+		statusRestore.m_mtime = CTime(Y,M,D,h,m,s);
+		sscanf(sFileHeader.m_atime, "%d-%d-%d %d:%d:%d",&Y,&M,&D,&h,&m,&s);
+		statusRestore.m_atime = CTime(Y,M,D,h,m,s);
+		statusRestore.m_size = sFileHeader.m_size;
+		statusRestore.m_attribute = sFileHeader.m_attribute;
+		statusRestore._m_padding = sFileHeader._m_padding;
+		CFile::SetStatus(cstrOutputFile, statusRestore);
+	}
+	if (CFile::hFileNull != s_file.m_hFile) {
+		//关闭之前文件
+		s_file.Close();
 	}
 	if (NULL != dataOut) {
 		delete[] dataOut;
@@ -505,8 +840,6 @@ CEncryptAlgorithmDlg::SetEncryptDecrypt()
 							SymmetryDESDlg* pSymmetryDESDlg = dynamic_cast<SymmetryDESDlg*>(const_cast<CDialog*>(pCDialog));
 							EncryptIF::Instance()->SetSymmetryKey(pSymmetryDESDlg->GetCipherKey());
 							EncryptIF::Instance()->SetSymmetryDesInitValue(pSymmetryDESDlg->GetInitialValue()); 
-							EncryptIF::Instance()->SetEncryptSymmetryDES(EncryptIF::ENCRYPTSYMMETRYDES_DES);
-							EncryptIF::Instance()->SetEncryptSymmetryDESMode(EncryptIF::ENCRYPTSYMMETRYDESMODE_ECB);
 							SetDecryptDES(pSymmetryDESDlg->GetDESType(), pSymmetryDESDlg->GetDESModeType());
 						}
 						break;
@@ -521,7 +854,6 @@ CEncryptAlgorithmDlg::SetEncryptDecrypt()
 			break;
 		default:
 			break;
-
 	}
 }
 
@@ -561,6 +893,59 @@ CEncryptAlgorithmDlg::SetDecryptDES(SymmetryDESDlg::SYMMETRY_TABLE_DES_TYPE eDES
 	}
 }
 
+void 
+CEncryptAlgorithmDlg::GetEncryptLevelFromCtrl(BYTE* pbyEncryptLevel1, BYTE* pbyEncryptLevel2, BYTE* pbyEncryptLevel3, BYTE* pbyEncryptLevel4)
+{
+	const CDialog* pCDialog = NULL;
+	switch(m_eCurSelTab) {
+		*pbyEncryptLevel1 = m_eCurSelTab;
+		case MAIN_TABLE_CONTROL_ENCRYPT_SYMMETRY:
+			if (NULL != m_pTabDlg[m_eCurSelTab]) {
+				SymmetryDlg* pSymmetryDlg = dynamic_cast<SymmetryDlg*>(m_pTabDlg[m_eCurSelTab]);
+				pCDialog = pSymmetryDlg->GetAlgorithmSymmetryDlg();
+				SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_TYPE eSymmetryEncrypt = pSymmetryDlg->GetEncrypt();
+				*pbyEncryptLevel2 = eSymmetryEncrypt;
+				switch(eSymmetryEncrypt) {
+					case SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_DES:
+						if (NULL != pCDialog) {
+							SymmetryDESDlg* pSymmetryDESDlg = dynamic_cast<SymmetryDESDlg*>(const_cast<CDialog*>(pCDialog));
+							*pbyEncryptLevel3 = pSymmetryDESDlg->GetDESType();
+							*pbyEncryptLevel4 = pSymmetryDESDlg->GetDESModeType();
+						}
+						break;
+					default:
+						break;
+				}
+			}
+			break;
+		case MAIN_TABLE_CONTROL_ENCRYPT_UNSYMMETRY:
+			break;
+		case MAIN_TABLE_CONTROL_ENCRYPT_HASH:
+			break;
+		default:
+			break;
+	}
+}
+
+void 
+CEncryptAlgorithmDlg::UpdateCtrlFromEncryptLevel(BYTE byEncryptLevel1, BYTE byEncryptLevel2, BYTE byEncryptLevel3, BYTE byEncryptLevel4)
+{
+	m_tab.SetCurSel(byEncryptLevel1);
+	switch(byEncryptLevel1) {
+		case MAIN_TABLE_CONTROL_ENCRYPT_SYMMETRY:
+			{
+				SymmetryDlg* pSymmetryDlg = dynamic_cast<SymmetryDlg*>(m_pTabDlg[byEncryptLevel1]);
+				break;
+			}
+		case MAIN_TABLE_CONTROL_ENCRYPT_UNSYMMETRY:
+			break;
+		case MAIN_TABLE_CONTROL_ENCRYPT_HASH:
+			break;
+		default:
+			break;
+	}
+	UpdateCtrl();
+}
 
 CEncryptAlgorithmDlg::CEncryptAlgorithmDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CEncryptAlgorithmDlg::IDD, pParent),
@@ -626,6 +1011,7 @@ BEGIN_MESSAGE_MAP(CEncryptAlgorithmDlg, CDialog)
 	ON_BN_CLICKED(IDC_RADIO_MAIN_ENCRYPTTEXT, &CEncryptAlgorithmDlg::OnBnClickedRadioMainEncrypttext)
 	ON_BN_CLICKED(IDC_RADIO_MAIN_OCTAL, &CEncryptAlgorithmDlg::OnBnClickedRadioMainOctal)
 	ON_BN_CLICKED(IDC_RADIO_MAIN_BINARY4, &CEncryptAlgorithmDlg::OnBnClickedRadioMainBinary4)
+	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB_MAIN_ENCRYPTALGORITHM, &CEncryptAlgorithmDlg::OnTcnSelchangeTabMainEncryptalgorithm)
 END_MESSAGE_MAP()
 
 
@@ -797,22 +1183,253 @@ void CEncryptAlgorithmDlg::OnBnClickedRadioMainEncryptfolder()
 
 void CEncryptAlgorithmDlg::OnStnClickedStaticMainSourcefile()
 {
+	CString cstrSourceFile;
 	// TODO: Add your control notification handler code here
+	GetDlgItem(IDC_EDIT_MAIN_SOURCEFILE)->GetWindowText(cstrSourceFile);
+	// OFN_HIDEREADONLY:隐藏只读选项
+	// OFN_OVERWRITEPROMPT:覆盖已有文件前提
+	// OFN_ALLOWMULTISELECT:允许选择多个文件
+	// OFN_CREATEPROMPT:如果输入的文件名不存在，则对话框返回询问用户是否根据次文件名创建文件的消息框
+	// OFN_FILEMUSTEXIST:只能输入已存在的文件名
+	// OFN_FORCESHOWHIDDEN:可以显示隐藏的文件
+	// OFN_NOREADONLYRETURN:不返回只读文件
+	// OFN_OVERWRITEPROMPT:保存的文件已存在时，显示文件已存在的信息
+
+	//创建一个可以选择多个文件的CFileDialog  
+	CFileDialog dlgFile(TRUE, NULL, cstrSourceFile, 
+		OFN_FILEMUSTEXIST|OFN_ALLOWMULTISELECT|OFN_ENABLESIZING|OFN_OVERWRITEPROMPT, 
+		_T("document files (*.txt; *.doc; *.hlp; *.wps; *.rtf; *.html; *.pdf) |*.txt; *.doc; *.hlp; *.wps; *.rtf; *.html; *.pdf |\
+		   compressed files (rar; *.zip; *.tar; *.cab; *.uue; *.jar; *.iso; *.z; *.7z; *.ace; *.lzh; *.arj; *.gzip; *.bz2) |rar; *.zip; *.tar; *.cab; *.uue; *.jar; *.iso; *.z; *.7z; *.ace; *.lzh; *.arj; *.gzip; *.bz2 |\
+		   image files (*.bmp; *.gif; *.jpg; *.jpge; *.pic; *.png; *.tif; *.raw) |*.bmp; *.gif; *.jpg; *.jpge; *.pic; *.png; *.tif; *.raw |\
+		   audio files (*.wav; *.aif; *.au; *.mp3; *.ram; *.wma; *.mmf; *.amr; *.aac; *.flac; *.mid; *.midi; *.rm; *.rmi; *.ape; *.pcm; *.voc) |*.wav; *.aif; *.au; *.mp3; *.ram; *.wma; *.mmf; *.amr; *.aac; *.flac; *.mid; *.midi; *.rm; *.rmi; *.ape; *.pcm; *.voc |\
+		   video files (*.avi; *.mkv; *.wma; *.rmvb; *.rm; *.flash; *.mp4; *.mid; *.3GP; *.mpg; *.mov; *.swf) |*.avi; *.mkv; *.wma; *.rmvb; *.rm; *.flash; *.mp4; *.mid; *.3GP; *.mpg; *.mov; *.swf |\
+		   All Files (*.*)|*.*||"), NULL);
+	//最多可以打开500个文件  
+	dlgFile.m_ofn.nMaxFile = 500 * MAX_PATH;  
+	TCHAR* chFile = new TCHAR[dlgFile.m_ofn.nMaxFile];  
+	dlgFile.m_ofn.lpstrFile = chFile;  
+	//对内存块清零  
+	ZeroMemory(dlgFile.m_ofn.lpstrFile,sizeof(TCHAR) * dlgFile.m_ofn.nMaxFile);
+	vector<CString> vFileName;	//清空存放的文件的路径   
+	if (IDOK == dlgFile.DoModal()) {
+		CString pathName;
+		CString fileName;
+		CString fileTitle;
+		//获取第一个文件的位置  
+		POSITION pos_file;  
+		pos_file = dlgFile.GetStartPosition();  
+
+		//循环读出每个路径并存放在数组中  
+		while(pos_file != NULL){  
+
+			//将文件路径存放在数组中  
+			pathName = dlgFile.GetNextPathName(pos_file);  
+			vFileName.push_back(pathName);  
+
+			//获取文件名   
+			//从字符串的后面往前遍历，如果遇到'\'则结束遍历，'\'右边的字符串则为文件名  
+			int length = pathName.GetLength();        
+			for(int i = length -1; i>0;i--)  
+			{  
+				if('\\' == pathName.GetAt(i))  
+				{//判断当前字符是否是'\'  
+					fileName = pathName.Right(length - i -1);  
+					break;//跳出循环
+				}  
+			}//endfor  
+
+			//获取文件名(不包含后缀)  
+			//采用CString的Left(int count)截取CString中从左往右数的count个字符  
+			//fileName.GetLength()-4中的4表示".dat"四个字符  
+
+			//fileTitle = fileName.Left(fileName.GetLength()-fileName.Find(_T(".")));  
+			//AfxMessageBox(fileTitle);  
+		}
+
+		if (false == vFileName.empty()) {
+			cstrSourceFile = vFileName[0];
+			for (int iCnt = 0x01; iCnt < (int)vFileName.size(); iCnt++) {
+				cstrSourceFile += (_T("|") + vFileName[iCnt]);
+			}
+		}
+		if (true == cstrSourceFile.IsEmpty()) {
+			return;
+		}
+		GetDlgItem(IDC_EDIT_MAIN_SOURCEFILE)->SetWindowText(cstrSourceFile);
+
+		if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTSINGLEFILE)))->GetCheck()) {
+			if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->GetCheck()) {
+				//设置输出文件夹
+				CString cstrOutputFolder;
+				GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->GetWindowText(cstrOutputFolder);
+				if (true == cstrOutputFolder.IsEmpty() || -1 != cstrOutputFolder.Find(STATIC_CONST_CSTR_ENCRYPTDECRYPTFOLDERMARK)) {
+					//没有指定输出路径或者使用默认路径+Encrypt/Decrypt 更新为当前路径+Encrypt/Decrypt
+					CString cstrPathName = dlgFile.GetPathName();	//得到完整的文件名，包括目录名和扩展名如：c:/test/test1.txt 多文件选择时，只返回文件所在文件夹路径如：c:/test/test1
+					CString cstrFileName = dlgFile.GetFileName();	//得到完整的文件名，包括扩展名如：test1.txt
+					if (false == cstrFileName.IsEmpty()) {
+						int nPos = cstrPathName.Find(cstrFileName);
+						if (-1 != nPos) {
+							//找到文件名
+							cstrOutputFolder = cstrPathName.Left(nPos);
+						}
+					}
+					else {
+						cstrOutputFolder = cstrPathName + _T("\\");
+					}
+					cstrOutputFolder += STATIC_CONST_CSTR_ENCRYPTDECRYPTFOLDERMARK;
+					GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->SetWindowText(cstrOutputFolder);
+				}
+			}
+		}
+	}
+	delete[] chFile;
+
+	//通过第一个文件刷新当前界面控件
+	if (true == vFileName.empty()) {
+		return;
+	}
+	static CFile s_fileUpdateCrl;		//只需要一个文件操作实例
+	static CFileException e;
+	if (CFile::hFileNull != s_fileUpdateCrl.m_hFile) {
+		s_fileUpdateCrl.Close();
+	}
+	if (FALSE == s_fileUpdateCrl.Open(vFileName[0], CFile::modeRead|CFile::typeBinary)) {
+		//打开文件失败
+		CString cstrFormat;
+		TCHAR szError[1024] = {0x00};
+		e.GetErrorMessage(szError, 1024);
+		cstrFormat.Format(_T("打开文件失败!\r\n文件名:%s\r\n错误代码:%d\r\n错误信息:%s"),e.m_strFileName, e.m_cause, szError);
+		MessageBox(cstrFormat);
+		return;
+	}
+	if (s_fileUpdateCrl.GetLength() > sizeof(FileHeader)) {
+		FileHeader sFileHeaderJudge = {0x00};
+		s_fileUpdateCrl.Read(&sFileHeaderJudge, sizeof(FileHeader));
+		if (0x00 == strcmp(sFileHeaderJudge.m_MD5Verify, STATIC_CONST_CSTR_MD5UPER32)) {
+			//认证通过
+			UpdateCtrlFromEncryptLevel(sFileHeaderJudge.byEncryptLevel1, sFileHeaderJudge.byEncryptLevel2, sFileHeaderJudge.byEncryptLevel3, sFileHeaderJudge.byEncryptLevel4);
+		}
+	}
 }
 
 void CEncryptAlgorithmDlg::OnStnClickedStaticMainOutputfolder()
 {
 	// TODO: Add your control notification handler code here
+	BROWSEINFO   bi;
+	memset(&bi, 0, sizeof(BROWSEINFO));
+	char szPath[MAX_PATH] = {0x00};
+	LPITEMIDLIST pList = NULL;
+
+	//获取当前路径
+	CString cstrOutputFolder;
+	CEdit* pEdit = (CEdit*)GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER);
+	pEdit->GetWindowText(cstrOutputFolder);
+	strcpy(szPath, cstrOutputFolder.GetBuffer(cstrOutputFolder.GetLength()) );
+	// 配置路径对话框
+	bi.hwndOwner = m_hWnd;
+	bi.pidlRoot = pList;
+	bi.pszDisplayName = szPath;
+	bi.lpszTitle   =  _T("选择路径");
+	bi.ulFlags = BIF_EDITBOX;
+	bi.lpfn = BrowseCallbackProc;
+	bi.lParam = (LPARAM)szPath;
+	bi.iImage = 0;
+
+	//弹出选择目录对话框
+	if   ((pList = SHBrowseForFolder(&bi)) != NULL) {    
+		if (SHGetPathFromIDList(pList, szPath)) {
+			pEdit->SetWindowText(szPath);
+		}
+	}
 }
 
 void CEncryptAlgorithmDlg::OnStnClickedStaticMainSourcefolder()
 {
 	// TODO: Add your control notification handler code here
+	BROWSEINFO   bi;
+	memset(&bi, 0, sizeof(BROWSEINFO));
+	char szPath[MAX_PATH] = {0x00};
+	LPITEMIDLIST pList = NULL;
+
+	//获取当前路径
+	CString cstrSourceFolder;
+	CEdit* pEdit = (CEdit*)GetDlgItem(IDC_EDIT_MAIN_SOURCEFOLDER);
+	pEdit->GetWindowText(cstrSourceFolder);
+	strcpy(szPath, cstrSourceFolder.GetBuffer(cstrSourceFolder.GetLength()) );
+	// 配置路径对话框
+	bi.hwndOwner = m_hWnd;
+	bi.pidlRoot = pList;
+	bi.pszDisplayName = szPath;
+	bi.lpszTitle   =  _T("选择路径");
+	bi.ulFlags = BIF_EDITBOX;
+	bi.lpfn = BrowseCallbackProc;
+	bi.lParam = (LPARAM)szPath;
+	bi.iImage = 0;
+
+	//弹出选择目录对话框
+	if   ((pList = SHBrowseForFolder(&bi)) != NULL) {    
+		if (SHGetPathFromIDList(pList, szPath)) {
+			pEdit->SetWindowText(szPath);
+		}
+	}
+
+	if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFOLDER)))->GetCheck()) {
+		if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->GetCheck()) {
+			//设置输出文件夹
+			CString cstrOutputFolder;
+			GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->GetWindowText(cstrOutputFolder);
+			if (true == cstrOutputFolder.IsEmpty() || -1 != cstrOutputFolder.Find(STATIC_CONST_CSTR_ENCRYPTDECRYPTFOLDERMARK)) {
+				//没有指定输出路径或者使用默认路径+Encrypt/Decrypt 更新为当前路径+Encrypt/Decrypt
+				cstrOutputFolder = szPath;
+				cstrOutputFolder += (_T("\\") + STATIC_CONST_CSTR_ENCRYPTDECRYPTFOLDERMARK);
+				GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->SetWindowText(cstrOutputFolder);
+			}
+		}
+	}
 }
 
 void CEncryptAlgorithmDlg::OnBnClickedButtonMainEncrypt()
 {
 	// TODO: Add your control notification handler code here
+	CString cstrJudge;
+	if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTTEXT)))->GetCheck()) {
+		GetDlgItem(IDC_EDIT_MAIN_PLAINTEXT)->GetWindowText(cstrJudge);
+		if (true == cstrJudge.IsEmpty()) {
+			MessageBox(_T("请输入需要加密的明文!"));
+			return;
+		}
+	}
+	else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFILE)))->GetCheck()) {
+		if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTSINGLEFILE)))->GetCheck()) {
+			GetDlgItem(IDC_EDIT_MAIN_SOURCEFILE)->GetWindowText(cstrJudge);
+			if (true == cstrJudge.IsEmpty()) {
+				MessageBox(_T("请选择需要加密的源文件!"));
+				return;
+			}
+		}
+		else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFOLDER)))->GetCheck()) {
+			GetDlgItem(IDC_EDIT_MAIN_SOURCEFOLDER)->GetWindowText(cstrJudge);
+			if (true == cstrJudge.IsEmpty()) {
+				MessageBox(_T("请选择需要加密的源文件夹!"));
+				return;
+			}
+		}
+		else {
+			;
+		}
+		
+		if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->GetCheck()) {
+			GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->GetWindowText(cstrJudge);
+			if (true == cstrJudge.IsEmpty()) {
+				MessageBox(_T("请选择输出路径!"));
+				return;
+			}
+		}
+	}
+	else {
+		;
+	}
+
 	GetDlgItem(IDC_BUTTON_MAIN_ENCRYPT)->EnableWindow(FALSE);
 	OnBnClickedButtonMainClearciphertext();
 	OnEncryptDecrypt(true);
@@ -822,6 +1439,45 @@ void CEncryptAlgorithmDlg::OnBnClickedButtonMainEncrypt()
 void CEncryptAlgorithmDlg::OnBnClickedButtonMainDecrypt()
 {
 	// TODO: Add your control notification handler code here
+	CString cstrJudge;
+	if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTTEXT)))->GetCheck()) {
+		GetDlgItem(IDC_EDIT_MAIN_PLAINTEXT)->GetWindowText(cstrJudge);
+		if (true == cstrJudge.IsEmpty()) {
+			MessageBox(_T("请输入需要解密的明文!"));
+			return;
+		}
+	}
+	else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFILE)))->GetCheck()) {
+		if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTSINGLEFILE)))->GetCheck()) {
+			GetDlgItem(IDC_EDIT_MAIN_SOURCEFILE)->GetWindowText(cstrJudge);
+			if (true == cstrJudge.IsEmpty()) {
+				MessageBox(_T("请选择需要解密的源文件!"));
+				return;
+			}
+		}
+		else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFOLDER)))->GetCheck()) {
+			GetDlgItem(IDC_EDIT_MAIN_SOURCEFOLDER)->GetWindowText(cstrJudge);
+			if (true == cstrJudge.IsEmpty()) {
+				MessageBox(_T("请选择需要解密的源文件夹!"));
+				return;
+			}
+		}
+		else {
+			;
+		}
+
+		if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->GetCheck()) {
+			GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->GetWindowText(cstrJudge);
+			if (true == cstrJudge.IsEmpty()) {
+				MessageBox(_T("请选择输出路径!"));
+				return;
+			}
+		}
+	}
+	else {
+		;
+	}
+
 	GetDlgItem(IDC_BUTTON_MAIN_DECRYPT)->EnableWindow(FALSE);
 	OnBnClickedButtonMainClearplaintext();
 	OnEncryptDecrypt(false);
@@ -849,4 +1505,32 @@ void CEncryptAlgorithmDlg::OnBnClickedRadioMainBinary4()
 {
 	// TODO: Add your control notification handler code here
 	CipherTextDisplay();
+}
+
+void CEncryptAlgorithmDlg::OnTcnSelchangeTabMainEncryptalgorithm(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	// TODO: Add your control notification handler code here
+	if (m_tab.GetCurSel() >= MAIN_TABLE_CONTROL_ENCRYPT_ALL) {
+		return;
+	}
+	//把当前的页面隐藏起来
+	m_pTabDlg[m_eCurSelTab]->ShowWindow(SW_HIDE);
+	//得到新的页面索引
+	m_eCurSelTab = static_cast<MAIN_TABLE_CONTROL_ENCRYPT_TYPE>(m_tab.GetCurSel());		//数组从1开始的
+	//把新的页面显示出来
+	m_pTabDlg[m_eCurSelTab]->ShowWindow(SW_SHOW);
+
+	//需要刷新的页面
+	if (MAIN_TABLE_CONTROL_ENCRYPT_SYMMETRY == m_eCurSelTab) {
+		SymmetryDlg* pSymmetryDlg = (SymmetryDlg*)m_pTabDlg[m_eCurSelTab];
+		pSymmetryDlg->UpdateCtrl();
+	}
+	if (MAIN_TABLE_CONTROL_ENCRYPT_UNSYMMETRY == m_eCurSelTab) {
+		
+	}
+	if (MAIN_TABLE_CONTROL_ENCRYPT_HASH == m_eCurSelTab) {
+		
+	}
+
+	*pResult = 0;
 }
