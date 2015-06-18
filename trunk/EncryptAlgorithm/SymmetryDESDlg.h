@@ -1,5 +1,5 @@
 #pragma once
-
+#pragma warning (disable:4996)	//È¡Ïû¾¯¸æ
 
 // SymmetryDESDlg dialog
 
@@ -31,8 +31,8 @@ public:
 	SYMMETRY_TABLE_DES_TYPE GetDESType();
 	SYMMETRY_TABLE_DESMODE_TYPE GetDESModeType();
 	
-	CString GetCipherKey();
-	CString GetInitialValue();
+	bool GetCipherKey(char* pKeyOut, long KeyOutLen, long* pKeyLen);
+	bool GetInitialValue(char* pKeyOut, long KeyOutLen, long* pKeyLen);
 
 	void UpdateCtrl();
 protected:
@@ -42,9 +42,19 @@ private:
 	void UpdateMixCtrl();
 	void UpdateMixCtrlValue();
 	void UpdateMixCtrlEnable();
+
+	bool ConvertCStringToData(CString cstrKeyIn, char* pKeyOut, long KeyOutLen, long* pKeyLen);
+
 public:
 protected:
 private:
+	static const long STATIC_CONST_LONG_KEYLENGTHMAX = 16+1;
+	char m_chKey[STATIC_CONST_LONG_KEYLENGTHMAX];
+	long m_lKeyLength;
+	static const long STATIC_CONST_LONG_INITVALUELENGTHMAX = 8+1;
+	char m_chInitValue[STATIC_CONST_LONG_INITVALUELENGTHMAX];
+	long m_lInitValueLength;
+
 	static const CString STATIC_CONST_CSTR_INITIALVECTORVALUE;
 	static const CString STATIC_CONST_CSTR_INITIALCOUNTVALUE;
 
@@ -70,4 +80,11 @@ public:
 	afx_msg void OnBnClickedRadioSymmetrydesDescfb();
 	afx_msg void OnBnClickedRadioSymmetrydesDesofb();
 	afx_msg void OnBnClickedRadioSymmetrydesDesctr();
+	afx_msg void OnBnClickedRadioSymmetrydesText();
+	afx_msg void OnBnClickedRadioSymmetrydesHex();
+	afx_msg void OnBnClickedRadioSymmetrydesOctal();
+	afx_msg void OnBnClickedRadioSymmetrydesBinarty4();
+	afx_msg void OnBnClickedRadioSymmetrydesBinary();
+	afx_msg void OnEnKillfocusEditSymmetrydesCipherkey();
+	afx_msg void OnEnKillfocusEditSymmetrydesInitialvalue();
 };

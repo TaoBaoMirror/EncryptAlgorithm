@@ -22,6 +22,10 @@
 #include "DES.h"
 #endif
 
+#ifndef AES_H
+#include "AES.h"
+#endif
+
 class EncryptIF
 {
 public:
@@ -47,6 +51,21 @@ public:
 	void SetEncrypt(ENCRYPT_TYPE eEncrypt) {m_eEncrypt = eEncrypt;}
 	ENCRYPT_TYPE GetEncrypt() {return m_eEncrypt;}
 
+	enum ENCRYPTSYMMETRYMODE_TYPE 
+	{
+		ENCRYPTSYMMETRYMODE_NON = 0x00,
+		ENCRYPTSYMMETRYMODE_ECB,
+		ENCRYPTSYMMETRYMODE_CBC,
+		ENCRYPTSYMMETRYMODE_CFB,
+		ENCRYPTSYMMETRYMODE_OFB,
+		ENCRYPTSYMMETRYMODE_CTR,
+
+		ENCRYPTSYMMETRYMODE_ALL,
+		ENCRYPTSYMMETRYMODE_INVALID = -1,
+	};
+	void SetEncryptSymmetryMode(ENCRYPTSYMMETRYMODE_TYPE eEncryptSymmetryDESMode) {m_eEncryptSymmetryMode = eEncryptSymmetryDESMode;}
+	ENCRYPTSYMMETRYMODE_TYPE GetEncryptSymmetryMode() {return m_eEncryptSymmetryMode;}
+
 	enum ENCRYPTSYMMETRY_TYPE 
 	{
 		ENCRYPTSYMMETRY_NON = 0x00,
@@ -71,50 +90,51 @@ public:
 	void SetEncryptSymmetryDES(ENCRYPTSYMMETRYDES_TYPE eEncryptSymmetryDES) {m_eEncryptSymmetryDES = eEncryptSymmetryDES;}
 	ENCRYPTSYMMETRYDES_TYPE GetEncryptSymmetryDES() {return m_eEncryptSymmetryDES;}
 
-	enum ENCRYPTSYMMETRYDESMODE_TYPE 
+	enum ENCRYPTSYMMETRYAESKEYSIZE_TYPE 
 	{
-		ENCRYPTSYMMETRYDESMODE_NON = 0x00,
-		ENCRYPTSYMMETRYDESMODE_ECB,
-		ENCRYPTSYMMETRYDESMODE_CBC,
-		ENCRYPTSYMMETRYDESMODE_CFB,
-		ENCRYPTSYMMETRYDESMODE_OFB,
-		ENCRYPTSYMMETRYDESMODE_CTR,
+		ENCRYPTSYMMETRYAESKEYSIZE_NON = 0x00,
+		ENCRYPTSYMMETRYAESKEYSIZE_BIT128,
+		ENCRYPTSYMMETRYAESKEYSIZE_BIT192,
+		ENCRYPTSYMMETRYAESKEYSIZE_BIT256,
 
-		ENCRYPTSYMMETRYDESMODE_ALL,
-		ENCRYPTSYMMETRYDESMODE_INVALID = -1,
+		ENCRYPTSYMMETRYAESKEYSIZE_ALL,
+		ENCRYPTSYMMETRYAESKEYSIZE_INVALID = -1,
 	};
-	void SetEncryptSymmetryDESMode(ENCRYPTSYMMETRYDESMODE_TYPE eEncryptSymmetryDESMode) {m_eEncryptSymmetryDESMode = eEncryptSymmetryDESMode;}
-	ENCRYPTSYMMETRYDESMODE_TYPE GetEncryptSymmetryDESMode() {return m_eEncryptSymmetryDESMode;}
+	void SetEncryptSymmetryAESKeySize(ENCRYPTSYMMETRYAESKEYSIZE_TYPE eEncryptSymmetryAESKeySize) {m_eEncryptSymmetryAESKeySize = eEncryptSymmetryAESKeySize;}
+	ENCRYPTSYMMETRYAESKEYSIZE_TYPE GetEncryptSymmetryAESKeySize() {return m_eEncryptSymmetryAESKeySize;}
 
-	void SetSymmetryKey(const char* chSymmetryKey);
-	void SetSymmetryDesInitValue(const char* chSymmetryDesInitValue);
+	void SetSymmetryKey(const char* chSymmetryKey, long lKeyLen);
+	void SetSymmetryDesInitValue(const char* chSymmetryDesInitValue, long lInitValueLen);
 protected:
 	EncryptIF();
 
 private:
 	DES* GetDES();
-	bool EncryptDecrypt(bool bEncrypt, char *dataIn, long dataInlen, char *dataOut);
-	bool EncryptDecryptSymmetryDES(bool bEncrypt, char *dataIn, long dataInlen, char *dataOut);
-	bool EncryptDecryptSymmetryAES(bool bEncrypt, char *dataIn, long dataInlen, char *dataOut);
+	AES* GetAES();
+	enum ENCRYPTDECRYPT_TYPE
+	{
+		ENCRYPTDECRYPT_ENCRYPT,
+		ENCRYPTDECRYPT_DECRYPT,
+	};
+	bool EncryptDecrypt(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut);
+	bool EncryptDecryptSymmetryDES(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut);
+	bool EncryptDecryptSymmetryAES(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut);
 public:
+	static const long STATIC_CONST_LONG_SYMMETRYKEYLENGTH = 32;				//DES加密 16位密码 AES加密 32位密码
+	static const long STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH = 16;	//DES加密 8位初始向量/计数值 AES加密 16位初始向量/计数值
 protected:
 private:
-	
-
 	static EncryptIF* m_pInstance;
 	ENCRYPT_TYPE m_eEncrypt;
+	ENCRYPTSYMMETRYMODE_TYPE m_eEncryptSymmetryMode;
 	ENCRYPTSYMMETRY_TYPE m_eEncryptSymmetry;
 	ENCRYPTSYMMETRYDES_TYPE m_eEncryptSymmetryDES;
-	ENCRYPTSYMMETRYDESMODE_TYPE m_eEncryptSymmetryDESMode;
+	ENCRYPTSYMMETRYAESKEYSIZE_TYPE m_eEncryptSymmetryAESKeySize;
 	
-	static const long STATIC_CONST_LONG_SYMMETRYKEYLENGTH = 128;
 	char m_chSymmetryKey[STATIC_CONST_LONG_SYMMETRYKEYLENGTH];
-	static const long STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH = 9;	//DES加密 8位初始向量/计数值
-	char m_chSymmetryDesInitValue[STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH]; //DES加密 8位初始向量/计数值
+	char m_chSymmetryDesInitValue[STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH];
 	DES* m_pDES;
-	
-	static const bool STATIC_CONST_BOOL_ENCRYPT;	//encrypt
-	static const bool STATIC_CONST_BOOL_DECRYPT;	//decrypt
+	AES* m_pAES;
 };
 
 #endif // ENCRYPTIF_H

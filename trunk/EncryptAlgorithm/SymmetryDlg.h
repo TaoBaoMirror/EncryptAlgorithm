@@ -9,6 +9,7 @@ public:
 	enum SYMMETRY_TABLE_CONTROL_ENCRYPT_TYPE 
 	{
 		SYMMETRY_TABLE_CONTROL_ENCRYPT_DES = 0x00,
+		SYMMETRY_TABLE_CONTROL_ENCRYPT_AES,
 
 		SYMMETRY_TABLE_CONTROL_ENCRYPT_ALL,
 		SYMMETRY_TABLE_CONTROL_ENCRYPT_INVALID = -1,
@@ -46,4 +47,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual BOOL OnInitDialog();
+	afx_msg void OnTcnSelchangeTabSymmetryEncryptalgorithm(NMHDR *pNMHDR, LRESULT *pResult);
 };

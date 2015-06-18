@@ -215,6 +215,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\SymmetryAESDlg.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SymmetryDESDlg.cpp"
 				>
 			</File>
@@ -241,6 +245,10 @@
 				</File>
 				<File
 					RelativePath=".\stdafx.h"
+					>
+				</File>
+				<File
+					RelativePath=".\SymmetryAESDlg.h"
 					>
 				</File>
 				<File
