@@ -4,7 +4,10 @@
 
 #pragma once
 #include "SymmetryDESDlg.h"
+#include "SymmetryAESDlg.h"
+
 #include <vector>
+
 using namespace std;
 
 // CEncryptAlgorithmDlg dialog
@@ -14,6 +17,7 @@ public:
 	void UpdateCtrl();
 protected:
 private:
+	static UINT SubThread(LPVOID pParam);
 	BOOL PreTranslateMessage(MSG* pMsg);
 	void OnInitCtrl();
 	void UpdateMixCtrlEnable();
@@ -24,6 +28,7 @@ private:
 	bool OnEncryptDecryptFile(bool bEncryp, CString cstrDataFile);
 	void SetEncryptDecrypt();
 	void SetDecryptDES(SymmetryDESDlg::SYMMETRY_TABLE_DES_TYPE eDES, SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_TYPE eDESMode);
+	void SetDecryptAES(SymmetryAESDlg::SYMMETRY_TABLE_AESKEYLEN_TYPE eAESKeySize, SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_TYPE eAESMode);
 	void GetEncryptLevelFromCtrl(BYTE* pbyEncryptLevel1, BYTE* pbyEncryptLevel2, BYTE* pbyEncryptLevel3, BYTE* pbyEncryptLevel4);
 	void UpdateCtrlFromEncryptLevel(BYTE byEncryptLevel1, BYTE byEncryptLevel2, BYTE byEncryptLevel3, BYTE byEncryptLevel4);
 	

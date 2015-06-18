@@ -6,6 +6,7 @@
 #include "EncryptAlgorithm.h"
 #include "EncryptAlgorithmDlg.h"
 #include "SymmetryDlg.h"
+#include "SymmetryAESDlg.h"
 #include <string>
 
 #ifndef ENCRYPTIF_H
@@ -564,7 +565,31 @@ CEncryptAlgorithmDlg::OnEncryptDecryptText(bool bEncryp, CString cstrDataText)
 	long dataOutLen = 0x00;
 	bool bSuccess = false;
 
-	dataOutLen = (dataInLen/8+(true==bEncryp?1:0))*8;
+	const CDialog* pCDialog = NULL;
+	switch(m_eCurSelTab) {
+		case MAIN_TABLE_CONTROL_ENCRYPT_SYMMETRY:
+			if (NULL != m_pTabDlg[m_eCurSelTab]) {
+				SymmetryDlg* pSymmetryDlg = dynamic_cast<SymmetryDlg*>(m_pTabDlg[m_eCurSelTab]);
+				pCDialog = pSymmetryDlg->GetAlgorithmSymmetryDlg();
+				switch(pSymmetryDlg->GetEncrypt()) {
+					case SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_DES:
+						dataOutLen = (dataInLen/8+(0==dataInLen%8?0:1))*8;		//加密算法决定，不足8位填充
+						break;
+					case SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_AES:
+						dataOutLen = (dataInLen/16+(0==dataInLen%16?0:1))*16;		//加密算法决定，不足8位填充
+						break;
+					default:
+						break;
+				}
+			}
+		case MAIN_TABLE_CONTROL_ENCRYPT_UNSYMMETRY:
+			break;
+		case MAIN_TABLE_CONTROL_ENCRYPT_HASH:
+			break;
+		default:
+			break;
+	}
+	
 	dataOut = new char[dataOutLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH];
 	memset(dataOut, 0x00, sizeof(char)*(dataOutLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH));
 
@@ -630,15 +655,33 @@ CEncryptAlgorithmDlg::OnEncryptDecryptText(bool bEncryp, CString cstrDataText)
 bool 
 CEncryptAlgorithmDlg::OnEncryptDecryptFile(bool bEncryp, CString cstrDataFile)
 {
+	ULONGLONG ullDecrytFileLen = 0x00;
 	long dataInLen = 0x00;
 	char *dataIn = NULL;
 	FileHeader sFileHeader;
+	CString cstrDataFileName;
 	static CFile s_file;		//只需要一个文件操作实例
 	static CFileException e;
 	long lFilePath = cstrDataFile.GetLength();
 	if (CFile::hFileNull != s_file.m_hFile) {
 		s_file.Close();
 	}
+	/************************************************************************/
+	/* 
+	CFile::modeCreate 创建新文件,如果在创建之前就有同名文件存在,则清除该文件的内容,文件长度变成零.
+	CFile::modeNoTruncate  必须和CFile::modeCreate合用.它会使得在创建新文件前,若存在同名文件，则直接打开该文件,而不会清除改文件.
+	CFile::modeRead  打开只读文件,也就是无法将任何数据写入该文件.
+	CFile::modeReadWrite  打开可读可写的文件.
+	CFile::modeWrite  打开只能写入的文件.
+	CFile::modeNoInherit  禁止子进程继承使用此文件
+	CFile::modeDenyNone  打开文件后,其他执行程序还可以再打开此文件并且读写文件中的数据
+	CFile::modeDenyRead  打开文件后,其他执行程序可以再次打开此文件,但是只能把数据写入文件
+	CFile::modeDenyWrite  打开文件后,其他执行程序可以再次打开此文件,但是只能读取文件中的数据
+	CFile::shareExclusive  打开文件后,禁止其他执行程序再次打开此文件,但是只能把数据写入文件
+	CFile::typeText  以文本文件打开,也就是CR/LF换行字符组会被解读成CR换行字符
+	CFile::typeBinary  以二进制模式打开
+	*/
+	/************************************************************************/
 	if (FALSE == s_file.Open(cstrDataFile, CFile::modeRead|CFile::typeBinary|CFile::shareDenyNone, &e)) {	//以二进制流文件写
 		//打开文件失败
 		CString cstrFormat;
@@ -648,8 +691,9 @@ CEncryptAlgorithmDlg::OnEncryptDecryptFile(bool bEncryp, CString cstrDataFile)
 		MessageBox(cstrFormat);
 		return false;
 	}
+	cstrDataFileName = s_file.GetFileName();
 	dataInLen = (long)s_file.GetLength() - (true==bEncryp?0x00:sizeof(FileHeader));
-	if (0 >= dataInLen) {
+	if (0 > dataInLen) {
 		MessageBox(_T("请选择正确文件! \r\n")+cstrDataFile);
 		s_file.Close();
 		return false;
@@ -664,6 +708,7 @@ CEncryptAlgorithmDlg::OnEncryptDecryptFile(bool bEncryp, CString cstrDataFile)
 			s_file.Close();
 			return false;
 		}
+		ullDecrytFileLen = sFileHeader.m_size;
 	}
 
 	dataIn = new char[dataInLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH];
@@ -675,7 +720,31 @@ CEncryptAlgorithmDlg::OnEncryptDecryptFile(bool bEncryp, CString cstrDataFile)
 	long dataOutLen = 0x00;
 	bool bSuccess = false;
 
-	dataOutLen = (dataInLen/8+(true==bEncryp?1:0))*8;
+	const CDialog* pCDialog = NULL;
+	switch(m_eCurSelTab) {
+		case MAIN_TABLE_CONTROL_ENCRYPT_SYMMETRY:
+			if (NULL != m_pTabDlg[m_eCurSelTab]) {
+				SymmetryDlg* pSymmetryDlg = dynamic_cast<SymmetryDlg*>(m_pTabDlg[m_eCurSelTab]);
+				pCDialog = pSymmetryDlg->GetAlgorithmSymmetryDlg();
+				switch(pSymmetryDlg->GetEncrypt()) {
+		case SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_DES:
+			dataOutLen = (dataInLen/8+(0==dataInLen%8?0:1))*8;		//加密算法决定，不足8位填充
+			break;
+		case SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_AES:
+			dataOutLen = (dataInLen/16+(0==dataInLen%16?0:1))*16;		//加密算法决定，不足8位填充
+			break;
+		default:
+			break;
+				}
+			}
+		case MAIN_TABLE_CONTROL_ENCRYPT_UNSYMMETRY:
+			break;
+		case MAIN_TABLE_CONTROL_ENCRYPT_HASH:
+			break;
+		default:
+			break;
+	}
+
 	dataOut = new char[dataOutLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH];
 	memset(dataOut, 0x00, sizeof(char)*(dataOutLen+STATIC_CONST_LONG_DESBUFFEREXPANDLENGTH));
 	//设置加解密参数
@@ -717,7 +786,7 @@ CEncryptAlgorithmDlg::OnEncryptDecryptFile(bool bEncryp, CString cstrDataFile)
 			if (cstrSourceFolder.Right(1) != "\\") {
 				cstrSourceFolder += "\\";
 			}
-			CString cstrOutputFolderAdd = cstrDataFile.Left(cstrDataFile.Find(s_file.GetFileName()));
+			CString cstrOutputFolderAdd = cstrDataFile.Left(cstrDataFile.Find(cstrDataFileName));
 			cstrOutputFolderAdd = cstrOutputFolderAdd.Right(cstrOutputFolderAdd.GetLength()-cstrSourceFolder.GetLength());
 			cstrOutputFolder += cstrOutputFolderAdd;
 		}
@@ -729,7 +798,7 @@ CEncryptAlgorithmDlg::OnEncryptDecryptFile(bool bEncryp, CString cstrDataFile)
 			return false;
 		}
 		cstrOutputFile = cstrOutputFolder;
-		cstrOutputFile += s_file.GetFileName();
+		cstrOutputFile += cstrDataFileName;
 	}
 	else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_REPLACESOURCEFILE)))->GetCheck()) {
 		cstrOutputFile = cstrDataFile;
@@ -792,7 +861,7 @@ CEncryptAlgorithmDlg::OnEncryptDecryptFile(bool bEncryp, CString cstrDataFile)
 	}
 	else {
 		//解密
-		s_file.Write(dataOut, dataOutLen);					//写入解密数据
+		s_file.Write(dataOut, (UINT)ullDecrytFileLen);					//写入解密数据
 		//关闭文件还原文件状态
 		if (CFile::hFileNull != s_file.m_hFile) {
 			s_file.Close();
@@ -838,9 +907,30 @@ CEncryptAlgorithmDlg::SetEncryptDecrypt()
 						EncryptIF::Instance()->SetEncryptSymmetry(EncryptIF::ENCRYPTSYMMETRY_DES);
 						if (NULL != pCDialog) {
 							SymmetryDESDlg* pSymmetryDESDlg = dynamic_cast<SymmetryDESDlg*>(const_cast<CDialog*>(pCDialog));
-							EncryptIF::Instance()->SetSymmetryKey(pSymmetryDESDlg->GetCipherKey());
-							EncryptIF::Instance()->SetSymmetryDesInitValue(pSymmetryDESDlg->GetInitialValue()); 
+							char chSymmetryKey[EncryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH] = {0x00};
+							char chSymmetryDESInitValue[EncryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH] = {0x00};
+							long lKeyLen = 0x00;
+							long lInitValueLen = 0x00;
+							pSymmetryDESDlg->GetCipherKey(chSymmetryKey, EncryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH, &lKeyLen);
+							pSymmetryDESDlg->GetInitialValue(chSymmetryDESInitValue, EncryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH, &lInitValueLen);
+							EncryptIF::Instance()->SetSymmetryKey(chSymmetryKey, lKeyLen);
+							EncryptIF::Instance()->SetSymmetryDesInitValue(chSymmetryDESInitValue, lInitValueLen); 
 							SetDecryptDES(pSymmetryDESDlg->GetDESType(), pSymmetryDESDlg->GetDESModeType());
+						}
+						break;
+					case SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_AES:
+						EncryptIF::Instance()->SetEncryptSymmetry(EncryptIF::ENCRYPTSYMMETRY_AES);
+						if (NULL != pCDialog) {
+							SymmetryAESDlg* pSymmetryAESDlg = dynamic_cast<SymmetryAESDlg*>(const_cast<CDialog*>(pCDialog));
+							char chSymmetryKey[EncryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH] = {0x00};
+							char chSymmetryDESInitValue[EncryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH] = {0x00};
+							long lKeyLen = 0x00;
+							long lInitValueLen = 0x00;
+							pSymmetryAESDlg->GetCipherKey(chSymmetryKey, EncryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH, &lKeyLen);
+							pSymmetryAESDlg->GetInitialValue(chSymmetryDESInitValue, EncryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH, &lInitValueLen);
+							EncryptIF::Instance()->SetSymmetryKey(chSymmetryKey, lKeyLen);
+							EncryptIF::Instance()->SetSymmetryDesInitValue(chSymmetryDESInitValue, lInitValueLen); 
+							SetDecryptAES(pSymmetryAESDlg->GetAESKeySizeType(), pSymmetryAESDlg->GetAESModeType());
 						}
 						break;
 					default:
@@ -873,22 +963,61 @@ CEncryptAlgorithmDlg::SetDecryptDES(SymmetryDESDlg::SYMMETRY_TABLE_DES_TYPE eDES
 	}
 	switch(eDESMode) {
 		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_ECB:
-			EncryptIF::Instance()->SetEncryptSymmetryDESMode(EncryptIF::ENCRYPTSYMMETRYDESMODE_ECB);
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_ECB);
 			break;
 		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_CBC:
-			EncryptIF::Instance()->SetEncryptSymmetryDESMode(EncryptIF::ENCRYPTSYMMETRYDESMODE_CBC);
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CBC);
 			break;
 		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_CFB:
-			EncryptIF::Instance()->SetEncryptSymmetryDESMode(EncryptIF::ENCRYPTSYMMETRYDESMODE_CFB);
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CFB);
 			break;
 		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_OFB:
-			EncryptIF::Instance()->SetEncryptSymmetryDESMode(EncryptIF::ENCRYPTSYMMETRYDESMODE_OFB);
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_OFB);
 			break;
 		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_CTR:
-			EncryptIF::Instance()->SetEncryptSymmetryDESMode(EncryptIF::ENCRYPTSYMMETRYDESMODE_CTR);
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CTR);
 			break;
 		default:
-			EncryptIF::Instance()->SetEncryptSymmetryDESMode(EncryptIF::ENCRYPTSYMMETRYDESMODE_INVALID);
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_INVALID);
+			break;
+	}
+}
+
+void 
+CEncryptAlgorithmDlg::SetDecryptAES(SymmetryAESDlg::SYMMETRY_TABLE_AESKEYLEN_TYPE eAESKeySize, SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_TYPE eAESMode)
+{
+	switch(eAESKeySize) {
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESKEYLEN_BIT128:
+			EncryptIF::Instance()->SetEncryptSymmetryAESKeySize(EncryptIF::ENCRYPTSYMMETRYAESKEYSIZE_BIT128);
+			break;
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESKEYLEN_BIT192:
+			EncryptIF::Instance()->SetEncryptSymmetryAESKeySize(EncryptIF::ENCRYPTSYMMETRYAESKEYSIZE_BIT192);
+			break;
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESKEYLEN_BIT256:
+			EncryptIF::Instance()->SetEncryptSymmetryAESKeySize(EncryptIF::ENCRYPTSYMMETRYAESKEYSIZE_BIT256);
+			break;
+		default:
+			EncryptIF::Instance()->SetEncryptSymmetryAESKeySize(EncryptIF::ENCRYPTSYMMETRYAESKEYSIZE_INVALID);
+			break;
+	}
+	switch(eAESMode) {
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_ECB:
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_ECB);
+			break;
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_CBC:
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CBC);
+			break;
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_CFB:
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CFB);
+			break;
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_OFB:
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_OFB);
+			break;
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_CTR:
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CTR);
+			break;
+		default:
+			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_INVALID);
 			break;
 	}
 }
@@ -911,6 +1040,13 @@ CEncryptAlgorithmDlg::GetEncryptLevelFromCtrl(BYTE* pbyEncryptLevel1, BYTE* pbyE
 							SymmetryDESDlg* pSymmetryDESDlg = dynamic_cast<SymmetryDESDlg*>(const_cast<CDialog*>(pCDialog));
 							*pbyEncryptLevel3 = pSymmetryDESDlg->GetDESType();
 							*pbyEncryptLevel4 = pSymmetryDESDlg->GetDESModeType();
+						}
+						break;
+					case SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_AES:
+						if (NULL != pCDialog) {
+							SymmetryAESDlg* pSymmetryAESDlg = dynamic_cast<SymmetryAESDlg*>(const_cast<CDialog*>(pCDialog));
+							*pbyEncryptLevel3 = pSymmetryAESDlg->GetAESKeySizeType();
+							*pbyEncryptLevel4 = pSymmetryAESDlg->GetAESModeType();
 						}
 						break;
 					default:
@@ -1441,7 +1577,7 @@ void CEncryptAlgorithmDlg::OnBnClickedButtonMainDecrypt()
 	// TODO: Add your control notification handler code here
 	CString cstrJudge;
 	if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTTEXT)))->GetCheck()) {
-		GetDlgItem(IDC_EDIT_MAIN_PLAINTEXT)->GetWindowText(cstrJudge);
+		GetDlgItem(IDC_EDIT_MAIN_CIPHERTEXT)->GetWindowText(cstrJudge);
 		if (true == cstrJudge.IsEmpty()) {
 			MessageBox(_T("请输入需要解密的明文!"));
 			return;

@@ -224,54 +224,24 @@ bool DES::CFB(char *IV, char *Out, char *In, long datalen, const char *Key, int 
 	SetKey(Key, keylen);
 	if(!Is3DES)
 	{
-		long i;
-		if(bDecrypt == DES_ENCRYPT)//加密		
+		for(long i=0; i<datalen; ++i, ++Out, ++In)
 		{
-			for(i=0; i<datalen; ++i, ++Out, ++In)
-			{
-				SDES(Out, IV, &SubKey[0], bDecrypt);
-				Xor(Out, In, 1);
-				RotateL(IV, 8, 1);
-				IV[7] = Out[0];
-			}
-		}
-		else//解密
-		{
-			for(i=0; i<datalen; ++i, ++Out, ++In)
-			{
-				SDES(Out, IV, &SubKey[0], !bDecrypt);
-				Xor(Out, In, 1);
-				RotateL(IV, 8, 1);
-				IV[7] = In[0];
-			}
+			SDES(Out, IV, &SubKey[0], DES_ENCRYPT);//注意使用的是加密函数!
+			Xor(Out, In, 1);
+			RotateL(IV, 8, 1);
+			DES_ENCRYPT==bDecrypt?(IV[7] = Out[0]):(IV[7] = In[0]);
 		}
 	}
 	else
 	{
-		long i;
-		if(bDecrypt == DES_ENCRYPT)//加密		
+		for(long i=0; i<datalen; ++i, ++Out, ++In)
 		{
-			for(i=0; i<datalen; ++i, ++Out, ++In)
-			{
-				SDES(Out, IV, &SubKey[0], bDecrypt);
-				SDES(Out, Out, &SubKey[1], !bDecrypt);
-				SDES(Out, Out, &SubKey[0], bDecrypt);
-				Xor(Out, In, 1);
-				RotateL(IV, 8, 1);
-				IV[7] = Out[0];
-			}
-		}
-		else//解密
-		{
-			for(i=0; i<datalen; ++i, ++Out, ++In)
-			{
-				SDES(Out, IV, &SubKey[0], !bDecrypt);
-				SDES(Out, Out, &SubKey[1], bDecrypt);
-				SDES(Out, Out, &SubKey[0], !bDecrypt);
-				Xor(Out, In, 1);
-				RotateL(IV, 8, 1);
-				IV[7] = In[0];
-			}
+			SDES(Out, IV, &SubKey[0], DES_ENCRYPT);
+			SDES(Out, Out, &SubKey[1], !DES_ENCRYPT);
+			SDES(Out, Out, &SubKey[0], DES_ENCRYPT);
+			Xor(Out, In, 1);
+			RotateL(IV, 8, 1);
+			DES_ENCRYPT==bDecrypt?(IV[7] = Out[0]):(IV[7] = In[0]);
 		}
 	}
 	return true;
@@ -448,3 +418,4 @@ void DES::BitToByte(char *Out, const bool *In, int bits)
 	for(int i=0; i<bits; ++i)
 		Out[i>>3] |= In[i]<<(i&7);
 }
+/* EOF */
