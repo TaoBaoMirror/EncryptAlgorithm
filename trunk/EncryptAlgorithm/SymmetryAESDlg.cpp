@@ -33,6 +33,27 @@ SymmetryAESDlg::GetAESKeySizeType()
 	return eAESKeySize;
 }
 
+void
+SymmetryAESDlg::SetAESKeySizeType(SYMMETRY_TABLE_AESKEYLEN_TYPE eAESKeySize)
+{
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_BIT128)))->SetCheck(BST_UNCHECKED);
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_BIT192)))->SetCheck(BST_UNCHECKED);
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_BIT256)))->SetCheck(BST_UNCHECKED);
+	switch (eAESKeySize) {
+		case SYMMETRY_TABLE_AESKEYLEN_BIT128:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_BIT128)))->SetCheck(BST_CHECKED);
+			break;
+		case SYMMETRY_TABLE_AESKEYLEN_BIT192:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_BIT192)))->SetCheck(BST_CHECKED);
+			break;
+		case SYMMETRY_TABLE_AESKEYLEN_BIT256:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_BIT256)))->SetCheck(BST_CHECKED);
+			break;
+		default:
+			break;
+	}
+}
+
 SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_TYPE 
 SymmetryAESDlg::GetAESModeType()
 {
@@ -56,6 +77,36 @@ SymmetryAESDlg::GetAESModeType()
 		eAESMode = SYMMETRY_TABLE_AESMODE_INVALID;
 	}
 	return eAESMode;
+}
+
+void 
+SymmetryAESDlg::SetAESModeType(SYMMETRY_TABLE_AESMODE_TYPE eAESMode)
+{
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_AESECB)))->SetCheck(BST_UNCHECKED);
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_AESCBC)))->SetCheck(BST_UNCHECKED);
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_AESCFB)))->SetCheck(BST_UNCHECKED);
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_AESOFB)))->SetCheck(BST_UNCHECKED);
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_AESCTR)))->SetCheck(BST_UNCHECKED);
+
+	switch (eAESMode) {
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_ECB:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_AESECB)))->SetCheck(BST_CHECKED);
+			break;
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_CBC:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_AESCBC)))->SetCheck(BST_CHECKED);
+			break;
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_CFB:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_AESCFB)))->SetCheck(BST_CHECKED);
+			break;
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_OFB:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_AESOFB)))->SetCheck(BST_CHECKED);
+			break;
+		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_CTR:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYAES_AESCTR)))->SetCheck(BST_CHECKED);
+			break;
+		default:
+			break;
+	}
 }
 
 

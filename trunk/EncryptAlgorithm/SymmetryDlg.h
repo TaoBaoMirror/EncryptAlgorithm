@@ -18,10 +18,13 @@ public:
 
 	const CDialog* GetAlgorithmSymmetryDlg();
 	void UpdateCtrl();
+
+	
 protected:
 private:
 	BOOL PreTranslateMessage(MSG* pMsg);
 	void OnInitCtrl();
+	void UpdateTabCtrl();
 
 public:
 	

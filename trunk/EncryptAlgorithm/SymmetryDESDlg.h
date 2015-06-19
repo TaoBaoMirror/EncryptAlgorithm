@@ -15,6 +15,8 @@ public:
 		SYMMETRY_TABLE_DES_ALL,
 		SYMMETRY_TABLE_DES_INVALID = -1,
 	};
+	SYMMETRY_TABLE_DES_TYPE GetDESType();
+	void SetDESType(SYMMETRY_TABLE_DES_TYPE eDESType);
 
 	enum SYMMETRY_TABLE_DESMODE_TYPE 
 	{
@@ -28,8 +30,8 @@ public:
 		SYMMETRY_TABLE_DESMODE_ALL,
 		SYMMETRY_TABLE_DESMODE_INVALID = -1,
 	};
-	SYMMETRY_TABLE_DES_TYPE GetDESType();
 	SYMMETRY_TABLE_DESMODE_TYPE GetDESModeType();
+	void SetDESModeType(SYMMETRY_TABLE_DESMODE_TYPE eDESModeType);
 	
 	bool GetCipherKey(char* pKeyOut, long KeyOutLen, long* pKeyLen);
 	bool GetInitialValue(char* pKeyOut, long KeyOutLen, long* pKeyLen);
