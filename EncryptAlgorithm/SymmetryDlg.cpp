@@ -25,7 +25,7 @@ SymmetryDlg::GetAlgorithmSymmetryDlg()
 void 
 SymmetryDlg::UpdateCtrl()
 {
-
+	UpdateTabCtrl();
 }
 
 BOOL 
@@ -70,6 +70,30 @@ SymmetryDlg::OnInitCtrl()
 	//显示当第一个子页面
 	m_pTabDlg[0]->ShowWindow(SW_SHOW);
 	m_eCurSelTab = static_cast<SYMMETRY_TABLE_CONTROL_ENCRYPT_TYPE>(0x00);
+}
+
+void 
+SymmetryDlg::UpdateTabCtrl()
+{
+	if (m_tab.GetCurSel() >= SYMMETRY_TABLE_CONTROL_ENCRYPT_ALL) {
+		return;
+	}
+	//把当前的页面隐藏起来
+	m_pTabDlg[m_eCurSelTab]->ShowWindow(SW_HIDE);
+	//得到新的页面索引
+	m_eCurSelTab = static_cast<SYMMETRY_TABLE_CONTROL_ENCRYPT_TYPE>(m_tab.GetCurSel());		//数组从1开始的
+	//把新的页面显示出来
+	m_pTabDlg[m_eCurSelTab]->ShowWindow(SW_SHOW);
+
+	//需要刷新的页面
+	if (SYMMETRY_TABLE_CONTROL_ENCRYPT_DES == m_eCurSelTab){
+		SymmetryDESDlg* pSymmetryDESDlg = dynamic_cast<SymmetryDESDlg*>(m_pTabDlg[m_eCurSelTab]);
+		pSymmetryDESDlg->UpdateCtrl();
+	}
+	if (SYMMETRY_TABLE_CONTROL_ENCRYPT_AES == m_eCurSelTab){
+		SymmetryAESDlg* pSymmetryAESDlg = dynamic_cast<SymmetryAESDlg*>(m_pTabDlg[m_eCurSelTab]);
+		pSymmetryAESDlg->UpdateCtrl();
+	}
 }
 
 IMPLEMENT_DYNAMIC(SymmetryDlg, CDialog)
@@ -129,24 +153,8 @@ BOOL SymmetryDlg::OnInitDialog()
 void SymmetryDlg::OnTcnSelchangeTabSymmetryEncryptalgorithm(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	// TODO: Add your control notification handler code here
-	if (m_tab.GetCurSel() >= SYMMETRY_TABLE_CONTROL_ENCRYPT_ALL) {
-		return;
-	}
-	//把当前的页面隐藏起来
-	m_pTabDlg[m_eCurSelTab]->ShowWindow(SW_HIDE);
-	//得到新的页面索引
-	m_eCurSelTab = static_cast<SYMMETRY_TABLE_CONTROL_ENCRYPT_TYPE>(m_tab.GetCurSel());		//数组从1开始的
-	//把新的页面显示出来
-	m_pTabDlg[m_eCurSelTab]->ShowWindow(SW_SHOW);
-
-	//需要刷新的页面
-	if (SYMMETRY_TABLE_CONTROL_ENCRYPT_DES == m_eCurSelTab){
-		SymmetryDESDlg* pSymmetryDESDlg = dynamic_cast<SymmetryDESDlg*>(m_pTabDlg[m_eCurSelTab]);
-		pSymmetryDESDlg->UpdateCtrl();
-	}
-	if (SYMMETRY_TABLE_CONTROL_ENCRYPT_AES == m_eCurSelTab){
-		SymmetryAESDlg* pSymmetryAESDlg = dynamic_cast<SymmetryAESDlg*>(m_pTabDlg[m_eCurSelTab]);
-		pSymmetryAESDlg->UpdateCtrl();
+	if (m_tab.GetCurSel() != m_eCurSelTab) {
+		UpdateTabCtrl();
 	}
 
 	*pResult = 0;

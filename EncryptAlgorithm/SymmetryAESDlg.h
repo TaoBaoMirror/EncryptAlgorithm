@@ -18,7 +18,7 @@ public:
 		SYMMETRY_TABLE_AESKEYLEN_INVALID = -1,
 	};
 	SYMMETRY_TABLE_AESKEYLEN_TYPE GetAESKeySizeType();
-
+	void SetAESKeySizeType(SYMMETRY_TABLE_AESKEYLEN_TYPE eAESKeySize);
 	enum SYMMETRY_TABLE_AESMODE_TYPE 
 	{
 		SYMMETRY_TABLE_AESMODE_NON = 0x00,
@@ -32,6 +32,7 @@ public:
 		SYMMETRY_TABLE_AESMODE_INVALID = -1,
 	};
 	SYMMETRY_TABLE_AESMODE_TYPE GetAESModeType();
+	void SetAESModeType(SYMMETRY_TABLE_AESMODE_TYPE eAESMode);
 
 	bool GetCipherKey(char* pKeyOut, long KeyOutLen, long* pKeyLen);
 	bool GetInitialValue(char* pKeyOut, long KeyOutLen, long* pKeyLen);

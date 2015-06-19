@@ -29,6 +29,24 @@ SymmetryDESDlg::GetDESType()
 	return eDES;
 }
 
+void 
+SymmetryDESDlg::SetDESType(SYMMETRY_TABLE_DES_TYPE eDESType)
+{
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DES)))->SetCheck(BST_UNCHECKED);
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_3DES)))->SetCheck(BST_UNCHECKED);
+
+	switch (eDESType) {
+		case SymmetryDESDlg::SYMMETRY_TABLE_DES_DES:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DES)))->SetCheck(BST_CHECKED);
+			break;
+		case SymmetryDESDlg::SYMMETRY_TABLE_DES_3DES:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_3DES)))->SetCheck(BST_CHECKED);
+			break;
+		default:
+			break;
+	}
+}
+
 SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_TYPE 
 SymmetryDESDlg::GetDESModeType()
 {
@@ -52,6 +70,36 @@ SymmetryDESDlg::GetDESModeType()
 		eDESMode = SYMMETRY_TABLE_DESMODE_INVALID;
 	}
 	return eDESMode;
+}
+
+void 
+SymmetryDESDlg::SetDESModeType(SYMMETRY_TABLE_DESMODE_TYPE eDESModeType)
+{
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DESECB)))->SetCheck(BST_UNCHECKED);
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DESCBC)))->SetCheck(BST_UNCHECKED);
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DESCFB)))->SetCheck(BST_UNCHECKED);
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DESOFB)))->SetCheck(BST_UNCHECKED);
+	((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DESCTR)))->SetCheck(BST_UNCHECKED);
+
+	switch (eDESModeType) {
+		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_ECB:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DESECB)))->SetCheck(BST_CHECKED);
+			break;
+		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_CBC:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DESCBC)))->SetCheck(BST_CHECKED);
+			break;
+		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_CFB:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DESCFB)))->SetCheck(BST_CHECKED);
+			break;
+		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_OFB:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DESOFB)))->SetCheck(BST_CHECKED);
+			break;
+		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_CTR:
+			((CButton*)(GetDlgItem(IDC_RADIO_SYMMETRYDES_DESCTR)))->SetCheck(BST_CHECKED);
+			break;
+		default:
+			break;
+	}
 }
 
 bool 

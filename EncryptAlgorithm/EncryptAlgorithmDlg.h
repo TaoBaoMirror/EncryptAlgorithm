@@ -30,8 +30,10 @@ private:
 	void SetDecryptDES(SymmetryDESDlg::SYMMETRY_TABLE_DES_TYPE eDES, SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_TYPE eDESMode);
 	void SetDecryptAES(SymmetryAESDlg::SYMMETRY_TABLE_AESKEYLEN_TYPE eAESKeySize, SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_TYPE eAESMode);
 	void GetEncryptLevelFromCtrl(BYTE* pbyEncryptLevel1, BYTE* pbyEncryptLevel2, BYTE* pbyEncryptLevel3, BYTE* pbyEncryptLevel4);
+	void UpdateCtrlFromFilePath(CString cstrFilePath);
 	void UpdateCtrlFromEncryptLevel(BYTE byEncryptLevel1, BYTE byEncryptLevel2, BYTE byEncryptLevel3, BYTE byEncryptLevel4);
 	
+	void UpdateTabCtrl();
 public:
 protected:
 private:
@@ -44,7 +46,7 @@ private:
 		MAIN_TABLE_CONTROL_ENCRYPT_ALL,
 		MAIN_TABLE_CONTROL_ENCRYPT_INVALID = -1,
 	};
-
+	
 	struct FileHeader{
 		/************************************************************************/
 		/*    ×Ö·û´®	mengxiang

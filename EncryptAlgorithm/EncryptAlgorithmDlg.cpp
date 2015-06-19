@@ -328,8 +328,8 @@ int CALLBACK BrowseCallbackProc(HWND hWnd, UINT uMsg, LPARAM , LPARAM lpData)
 	} 
 	return 0;  
 }
-vector<CString> test;
-void TraverseDir(CString& cstrDir, vector<CString>* pvFilePath)
+
+void TraverseDir(CString& cstrDir, vector<CString>* pvFilePath, bool bOnlyOneFile = false)
 {
 	if (NULL == pvFilePath || true == cstrDir.IsEmpty()) {
 		return;
@@ -341,13 +341,16 @@ void TraverseDir(CString& cstrDir, vector<CString>* pvFilePath)
 	cstrDir += "*.*";
 	BOOL bTraverse = cFileFind.FindFile(cstrDir);
 	while (bTraverse) {
+		if (true == bOnlyOneFile && false == pvFilePath->empty()) {
+			return;
+		}
 		bTraverse = cFileFind.FindNextFile();
 		if (TRUE == cFileFind.IsDots()) {
 			// skip . and .. files;
 			continue;
 		}
 		if (TRUE == cFileFind.IsDirectory()) {
-			TraverseDir(cFileFind.GetFilePath(), pvFilePath);
+			TraverseDir(cFileFind.GetFilePath(), pvFilePath, bOnlyOneFile);
 		}
 		else {
 			pvFilePath->push_back(cFileFind.GetFilePath());
@@ -357,6 +360,8 @@ void TraverseDir(CString& cstrDir, vector<CString>* pvFilePath)
 void 
 CEncryptAlgorithmDlg::UpdateCtrl()
 {
+	UpdateTabCtrl();
+
 	UpdateMixCtrlEnable();
 }
 
@@ -422,6 +427,7 @@ CEncryptAlgorithmDlg::UpdateMixCtrlEnable()
 	GetDlgItem(IDC_RADIO_MAIN_HEX)->EnableWindow(bEncryptText);
 	GetDlgItem(IDC_RADIO_MAIN_BINARY)->EnableWindow(bEncryptText);
 	GetDlgItem(IDC_RADIO_MAIN_OCTAL)->EnableWindow(bEncryptText);
+	GetDlgItem(IDC_RADIO_MAIN_BINARY4)->EnableWindow(bEncryptText);
 	GetDlgItem(IDC_RADIO_MAIN_ORIGINALCHARACTER)->EnableWindow(bEncryptText);
 	GetDlgItem(IDC_EDIT_MAIN_PLAINTEXT)->EnableWindow(bEncryptText);
 	GetDlgItem(IDC_EDIT_MAIN_CIPHERTEXT)->EnableWindow(bEncryptText);
@@ -495,7 +501,6 @@ CEncryptAlgorithmDlg::OnEncryptDecrypt(bool bEncryp)
 		else if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFOLDER)))->GetCheck()) {
 			CString cstrSourceFolder;
 			GetDlgItem(IDC_EDIT_MAIN_SOURCEFOLDER)->GetWindowText(cstrSourceFolder);
-			test.clear();
 			TraverseDir(cstrSourceFolder, &vEncryptFilePath);
 		}
 		else {
@@ -1064,15 +1069,75 @@ CEncryptAlgorithmDlg::GetEncryptLevelFromCtrl(BYTE* pbyEncryptLevel1, BYTE* pbyE
 }
 
 void 
+CEncryptAlgorithmDlg::UpdateCtrlFromFilePath(CString cstrFilePath)
+{
+	static CFile s_fileUpdateCrl;		//只需要一个文件操作实例
+	static CFileException e;
+	if (CFile::hFileNull != s_fileUpdateCrl.m_hFile) {
+		s_fileUpdateCrl.Close();
+	}
+	if (FALSE == s_fileUpdateCrl.Open(cstrFilePath, CFile::modeRead|CFile::typeBinary|CFile::shareDenyNone)) {
+		//打开文件失败
+		CString cstrFormat;
+		TCHAR szError[1024] = {0x00};
+		e.GetErrorMessage(szError, 1024);
+		cstrFormat.Format(_T("打开文件失败!\r\n文件名:%s\r\n错误代码:%d\r\n错误信息:%s"),e.m_strFileName, e.m_cause, szError);
+		MessageBox(cstrFormat);
+		return;
+	}
+	if (s_fileUpdateCrl.GetLength() > sizeof(FileHeader)) {
+		FileHeader sFileHeaderJudge = {0x00};
+		s_fileUpdateCrl.Read(&sFileHeaderJudge, sizeof(FileHeader));
+		if (0x00 == strcmp(sFileHeaderJudge.m_MD5Verify, STATIC_CONST_CSTR_MD5UPER32)) {
+			//认证通过
+			UpdateCtrlFromEncryptLevel(sFileHeaderJudge.byEncryptLevel1, sFileHeaderJudge.byEncryptLevel2, sFileHeaderJudge.byEncryptLevel3, sFileHeaderJudge.byEncryptLevel4);
+		}
+	}
+	if (CFile::hFileNull != s_fileUpdateCrl.m_hFile) {
+		s_fileUpdateCrl.Close();
+	}
+}
+
+void 
 CEncryptAlgorithmDlg::UpdateCtrlFromEncryptLevel(BYTE byEncryptLevel1, BYTE byEncryptLevel2, BYTE byEncryptLevel3, BYTE byEncryptLevel4)
 {
-	m_tab.SetCurSel(byEncryptLevel1);
+	const CDialog* pCDialog = NULL;
+	if (m_tab.GetCurSel() != byEncryptLevel1) {
+		m_tab.SetCurSel(byEncryptLevel1);
+		UpdateCtrl();
+	}
+	
 	switch(byEncryptLevel1) {
 		case MAIN_TABLE_CONTROL_ENCRYPT_SYMMETRY:
 			{
 				SymmetryDlg* pSymmetryDlg = dynamic_cast<SymmetryDlg*>(m_pTabDlg[byEncryptLevel1]);
-				break;
+				CTabCtrl* pTabCtrl= (CTabCtrl*)(pSymmetryDlg->GetDlgItem(IDC_TAB_SYMMETRY_ENCRYPTALGORITHM));
+				if (pTabCtrl->GetCurSel() != byEncryptLevel2) {
+					pTabCtrl->SetCurSel(byEncryptLevel2);
+				}
+				pSymmetryDlg->UpdateCtrl();
+				
+				pCDialog = pSymmetryDlg->GetAlgorithmSymmetryDlg();
+				switch(byEncryptLevel2) {
+					case SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_DES:
+						{
+							SymmetryDESDlg* pSymmetryDESDlg = dynamic_cast<SymmetryDESDlg*>(const_cast<CDialog*>(pCDialog));
+							pSymmetryDESDlg->SetDESType(static_cast<SymmetryDESDlg::SYMMETRY_TABLE_DES_TYPE>(byEncryptLevel3));
+							pSymmetryDESDlg->SetDESModeType(static_cast<SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_TYPE>(byEncryptLevel4));
+						}
+						break;
+					case SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_AES:
+						{
+							SymmetryAESDlg* pSymmetryAESDlg = dynamic_cast<SymmetryAESDlg*>(const_cast<CDialog*>(pCDialog));
+							pSymmetryAESDlg->SetAESKeySizeType(static_cast<SymmetryAESDlg::SYMMETRY_TABLE_AESKEYLEN_TYPE>(byEncryptLevel3));
+							pSymmetryAESDlg->SetAESModeType(static_cast<SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_TYPE>(byEncryptLevel4));
+						}
+						break;
+					default:
+						break;
+				}
 			}
+			break;
 		case MAIN_TABLE_CONTROL_ENCRYPT_UNSYMMETRY:
 			break;
 		case MAIN_TABLE_CONTROL_ENCRYPT_HASH:
@@ -1080,7 +1145,33 @@ CEncryptAlgorithmDlg::UpdateCtrlFromEncryptLevel(BYTE byEncryptLevel1, BYTE byEn
 		default:
 			break;
 	}
-	UpdateCtrl();
+//	UpdateCtrl();
+}
+
+void 
+CEncryptAlgorithmDlg::UpdateTabCtrl()
+{
+	if (m_tab.GetCurSel() >= MAIN_TABLE_CONTROL_ENCRYPT_ALL) {
+		return;
+	}
+	//把当前的页面隐藏起来
+	m_pTabDlg[m_eCurSelTab]->ShowWindow(SW_HIDE);
+	//得到新的页面索引
+	m_eCurSelTab = static_cast<MAIN_TABLE_CONTROL_ENCRYPT_TYPE>(m_tab.GetCurSel());		//数组从1开始的
+	//把新的页面显示出来
+	m_pTabDlg[m_eCurSelTab]->ShowWindow(SW_SHOW);
+
+	//需要刷新的页面
+	if (MAIN_TABLE_CONTROL_ENCRYPT_SYMMETRY == m_eCurSelTab) {
+		SymmetryDlg* pSymmetryDlg = (SymmetryDlg*)m_pTabDlg[m_eCurSelTab];
+		pSymmetryDlg->UpdateCtrl();
+	}
+	if (MAIN_TABLE_CONTROL_ENCRYPT_UNSYMMETRY == m_eCurSelTab) {
+
+	}
+	if (MAIN_TABLE_CONTROL_ENCRYPT_HASH == m_eCurSelTab) {
+
+	}
 }
 
 CEncryptAlgorithmDlg::CEncryptAlgorithmDlg(CWnd* pParent /*=NULL*/)
@@ -1392,6 +1483,10 @@ void CEncryptAlgorithmDlg::OnStnClickedStaticMainSourcefile()
 			return;
 		}
 		GetDlgItem(IDC_EDIT_MAIN_SOURCEFILE)->SetWindowText(cstrSourceFile);
+		//通过第一个文件刷新当前界面控件
+		if (false == vFileName.empty()) {
+			UpdateCtrlFromFilePath(vFileName[0]);
+		}
 
 		if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTSINGLEFILE)))->GetCheck()) {
 			if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->GetCheck()) {
@@ -1419,33 +1514,6 @@ void CEncryptAlgorithmDlg::OnStnClickedStaticMainSourcefile()
 		}
 	}
 	delete[] chFile;
-
-	//通过第一个文件刷新当前界面控件
-	if (true == vFileName.empty()) {
-		return;
-	}
-	static CFile s_fileUpdateCrl;		//只需要一个文件操作实例
-	static CFileException e;
-	if (CFile::hFileNull != s_fileUpdateCrl.m_hFile) {
-		s_fileUpdateCrl.Close();
-	}
-	if (FALSE == s_fileUpdateCrl.Open(vFileName[0], CFile::modeRead|CFile::typeBinary)) {
-		//打开文件失败
-		CString cstrFormat;
-		TCHAR szError[1024] = {0x00};
-		e.GetErrorMessage(szError, 1024);
-		cstrFormat.Format(_T("打开文件失败!\r\n文件名:%s\r\n错误代码:%d\r\n错误信息:%s"),e.m_strFileName, e.m_cause, szError);
-		MessageBox(cstrFormat);
-		return;
-	}
-	if (s_fileUpdateCrl.GetLength() > sizeof(FileHeader)) {
-		FileHeader sFileHeaderJudge = {0x00};
-		s_fileUpdateCrl.Read(&sFileHeaderJudge, sizeof(FileHeader));
-		if (0x00 == strcmp(sFileHeaderJudge.m_MD5Verify, STATIC_CONST_CSTR_MD5UPER32)) {
-			//认证通过
-			UpdateCtrlFromEncryptLevel(sFileHeaderJudge.byEncryptLevel1, sFileHeaderJudge.byEncryptLevel2, sFileHeaderJudge.byEncryptLevel3, sFileHeaderJudge.byEncryptLevel4);
-		}
-	}
 }
 
 void CEncryptAlgorithmDlg::OnStnClickedStaticMainOutputfolder()
@@ -1506,19 +1574,26 @@ void CEncryptAlgorithmDlg::OnStnClickedStaticMainSourcefolder()
 	if   ((pList = SHBrowseForFolder(&bi)) != NULL) {    
 		if (SHGetPathFromIDList(pList, szPath)) {
 			pEdit->SetWindowText(szPath);
-		}
-	}
 
-	if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFOLDER)))->GetCheck()) {
-		if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->GetCheck()) {
-			//设置输出文件夹
-			CString cstrOutputFolder;
-			GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->GetWindowText(cstrOutputFolder);
-			if (true == cstrOutputFolder.IsEmpty() || -1 != cstrOutputFolder.Find(STATIC_CONST_CSTR_ENCRYPTDECRYPTFOLDERMARK)) {
-				//没有指定输出路径或者使用默认路径+Encrypt/Decrypt 更新为当前路径+Encrypt/Decrypt
-				cstrOutputFolder = szPath;
-				cstrOutputFolder += (_T("\\") + STATIC_CONST_CSTR_ENCRYPTDECRYPTFOLDERMARK);
-				GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->SetWindowText(cstrOutputFolder);
+			//通过第一个文件刷新当前界面控件
+			vector<CString> vEncryptFilePath;
+			TraverseDir((CString)szPath, &vEncryptFilePath, true);
+			if (false == vEncryptFilePath.empty()) {
+				UpdateCtrlFromFilePath(vEncryptFilePath[0]);
+			}
+
+			if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_ENCRYPTFOLDER)))->GetCheck()) {
+				if (BST_CHECKED == ((CButton*)(GetDlgItem(IDC_RADIO_MAIN_KEEPSOURCEFILE)))->GetCheck()) {
+					//设置输出文件夹
+					CString cstrOutputFolder;
+					GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->GetWindowText(cstrOutputFolder);
+					if (true == cstrOutputFolder.IsEmpty() || -1 != cstrOutputFolder.Find(STATIC_CONST_CSTR_ENCRYPTDECRYPTFOLDERMARK)) {
+						//没有指定输出路径或者使用默认路径+Encrypt/Decrypt 更新为当前路径+Encrypt/Decrypt
+						cstrOutputFolder = szPath;
+						cstrOutputFolder += (_T("\\") + STATIC_CONST_CSTR_ENCRYPTDECRYPTFOLDERMARK);
+						GetDlgItem(IDC_EDIT_MAIN_OUTPUTFOLDER)->SetWindowText(cstrOutputFolder);
+					}
+				}
 			}
 		}
 	}
@@ -1646,26 +1721,9 @@ void CEncryptAlgorithmDlg::OnBnClickedRadioMainBinary4()
 void CEncryptAlgorithmDlg::OnTcnSelchangeTabMainEncryptalgorithm(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	// TODO: Add your control notification handler code here
-	if (m_tab.GetCurSel() >= MAIN_TABLE_CONTROL_ENCRYPT_ALL) {
-		return;
-	}
-	//把当前的页面隐藏起来
-	m_pTabDlg[m_eCurSelTab]->ShowWindow(SW_HIDE);
-	//得到新的页面索引
-	m_eCurSelTab = static_cast<MAIN_TABLE_CONTROL_ENCRYPT_TYPE>(m_tab.GetCurSel());		//数组从1开始的
-	//把新的页面显示出来
-	m_pTabDlg[m_eCurSelTab]->ShowWindow(SW_SHOW);
-
-	//需要刷新的页面
-	if (MAIN_TABLE_CONTROL_ENCRYPT_SYMMETRY == m_eCurSelTab) {
-		SymmetryDlg* pSymmetryDlg = (SymmetryDlg*)m_pTabDlg[m_eCurSelTab];
-		pSymmetryDlg->UpdateCtrl();
-	}
-	if (MAIN_TABLE_CONTROL_ENCRYPT_UNSYMMETRY == m_eCurSelTab) {
-		
-	}
-	if (MAIN_TABLE_CONTROL_ENCRYPT_HASH == m_eCurSelTab) {
-		
+	if (m_tab.GetCurSel() != m_eCurSelTab) {
+		m_tab.SetCurSel(m_eCurSelTab);
+		UpdateTabCtrl();
 	}
 
 	*pResult = 0;
