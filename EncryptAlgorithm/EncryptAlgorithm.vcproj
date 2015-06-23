@@ -298,6 +298,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\Algorithm\BlowFish.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\Algorithm\DES.cpp"
 					>
 				</File>
@@ -314,6 +318,10 @@
 					>
 					<File
 						RelativePath="..\Algorithm\groupinc\AES.h"
+						>
+					</File>
+					<File
+						RelativePath="..\Algorithm\groupinc\BlowFish.h"
 						>
 					</File>
 					<File
