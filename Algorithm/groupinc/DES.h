@@ -26,7 +26,7 @@
 
 class DES  
 {
-friend class EncryptIF;
+friend class EnDecryptIF;
 public:
 	typedef bool    (*PSubKey)[16][48];
 

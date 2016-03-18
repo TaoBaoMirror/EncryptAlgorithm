@@ -28,7 +28,7 @@
 #pragma once
 class AES
 {
-friend class EncryptIF;
+friend class EnDecryptIF;
 public:
 	enum AES_KEYSIZE
 	{

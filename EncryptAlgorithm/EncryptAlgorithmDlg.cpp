@@ -9,8 +9,8 @@
 #include "SymmetryAESDlg.h"
 #include <string>
 
-#ifndef ENCRYPTIF_H
-#include "EncryptIF.h"
+#ifndef ENDECRYPTIF_H
+#include "EnDecryptIF.h"
 #endif
 
 #ifdef _DEBUG
@@ -601,7 +601,7 @@ CEncryptAlgorithmDlg::OnEncryptDecryptText(bool bEncryp, CString cstrDataText)
 	//设置加解密参数
 	SetEncryptDecrypt();
 	//加解密
-	bSuccess = true==bEncryp?EncryptIF::Instance()->Encrypt(dataIn, dataInLen, dataOut):EncryptIF::Instance()->Decrypt(dataIn, dataInLen, dataOut);
+	bSuccess = true==bEncryp?EnDecryptIF::Instance()->Encrypt(dataIn, dataInLen, dataOut):EnDecryptIF::Instance()->Decrypt(dataIn, dataInLen, dataOut);
 
 	if (false == bSuccess) {
 		true==bEncryp?MessageBox(_T("加密失败!")):MessageBox(_T("解密失败!"));
@@ -755,7 +755,7 @@ CEncryptAlgorithmDlg::OnEncryptDecryptFile(bool bEncryp, CString cstrDataFile)
 	//设置加解密参数
 	SetEncryptDecrypt();
 	//加解密
-	bSuccess = true==bEncryp?EncryptIF::Instance()->Encrypt(dataIn, dataInLen, dataOut):EncryptIF::Instance()->Decrypt(dataIn, dataInLen, dataOut);
+	bSuccess = true==bEncryp?EnDecryptIF::Instance()->Encrypt(dataIn, dataInLen, dataOut):EnDecryptIF::Instance()->Decrypt(dataIn, dataInLen, dataOut);
 	if (NULL != dataIn) {
 		delete[] dataIn;
 		dataIn = NULL;
@@ -902,39 +902,39 @@ CEncryptAlgorithmDlg::SetEncryptDecrypt()
 	const CDialog* pCDialog = NULL;
 	switch(m_eCurSelTab) {
 		case MAIN_TABLE_CONTROL_ENCRYPT_SYMMETRY:
-			EncryptIF::Instance()->SetEncrypt(EncryptIF::ENCRYPT_SYMMETRY);
+			EnDecryptIF::Instance()->SetEncrypt(EnDecryptIF::ENCRYPT_SYMMETRY);
 			if (NULL != m_pTabDlg[m_eCurSelTab]) {
 				SymmetryDlg* pSymmetryDlg = dynamic_cast<SymmetryDlg*>(m_pTabDlg[m_eCurSelTab]);
 				pCDialog = pSymmetryDlg->GetAlgorithmSymmetryDlg();
 				SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_TYPE eSymmetryEncrypt = pSymmetryDlg->GetEncrypt();
 				switch(eSymmetryEncrypt) {
 					case SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_DES:
-						EncryptIF::Instance()->SetEncryptSymmetry(EncryptIF::ENCRYPTSYMMETRY_DES);
+						EnDecryptIF::Instance()->SetEncryptSymmetry(EnDecryptIF::ENCRYPTSYMMETRY_DES);
 						if (NULL != pCDialog) {
 							SymmetryDESDlg* pSymmetryDESDlg = dynamic_cast<SymmetryDESDlg*>(const_cast<CDialog*>(pCDialog));
-							char chSymmetryKey[EncryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH] = {0x00};
-							char chSymmetryDESInitValue[EncryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH] = {0x00};
+							char chSymmetryKey[EnDecryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH] = {0x00};
+							char chSymmetryDESInitValue[EnDecryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH] = {0x00};
 							long lKeyLen = 0x00;
 							long lInitValueLen = 0x00;
-							pSymmetryDESDlg->GetCipherKey(chSymmetryKey, EncryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH, &lKeyLen);
-							pSymmetryDESDlg->GetInitialValue(chSymmetryDESInitValue, EncryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH, &lInitValueLen);
-							EncryptIF::Instance()->SetSymmetryKey(chSymmetryKey, lKeyLen);
-							EncryptIF::Instance()->SetSymmetryDesInitValue(chSymmetryDESInitValue, lInitValueLen); 
+							pSymmetryDESDlg->GetCipherKey(chSymmetryKey, EnDecryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH, &lKeyLen);
+							pSymmetryDESDlg->GetInitialValue(chSymmetryDESInitValue, EnDecryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH, &lInitValueLen);
+							EnDecryptIF::Instance()->SetSymmetryKey(chSymmetryKey, lKeyLen);
+							EnDecryptIF::Instance()->SetSymmetryDesInitValue(chSymmetryDESInitValue, lInitValueLen); 
 							SetDecryptDES(pSymmetryDESDlg->GetDESType(), pSymmetryDESDlg->GetDESModeType());
 						}
 						break;
 					case SymmetryDlg::SYMMETRY_TABLE_CONTROL_ENCRYPT_AES:
-						EncryptIF::Instance()->SetEncryptSymmetry(EncryptIF::ENCRYPTSYMMETRY_AES);
+						EnDecryptIF::Instance()->SetEncryptSymmetry(EnDecryptIF::ENCRYPTSYMMETRY_AES);
 						if (NULL != pCDialog) {
 							SymmetryAESDlg* pSymmetryAESDlg = dynamic_cast<SymmetryAESDlg*>(const_cast<CDialog*>(pCDialog));
-							char chSymmetryKey[EncryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH] = {0x00};
-							char chSymmetryDESInitValue[EncryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH] = {0x00};
+							char chSymmetryKey[EnDecryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH] = {0x00};
+							char chSymmetryDESInitValue[EnDecryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH] = {0x00};
 							long lKeyLen = 0x00;
 							long lInitValueLen = 0x00;
-							pSymmetryAESDlg->GetCipherKey(chSymmetryKey, EncryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH, &lKeyLen);
-							pSymmetryAESDlg->GetInitialValue(chSymmetryDESInitValue, EncryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH, &lInitValueLen);
-							EncryptIF::Instance()->SetSymmetryKey(chSymmetryKey, lKeyLen);
-							EncryptIF::Instance()->SetSymmetryDesInitValue(chSymmetryDESInitValue, lInitValueLen); 
+							pSymmetryAESDlg->GetCipherKey(chSymmetryKey, EnDecryptIF::STATIC_CONST_LONG_SYMMETRYKEYLENGTH, &lKeyLen);
+							pSymmetryAESDlg->GetInitialValue(chSymmetryDESInitValue, EnDecryptIF::STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH, &lInitValueLen);
+							EnDecryptIF::Instance()->SetSymmetryKey(chSymmetryKey, lKeyLen);
+							EnDecryptIF::Instance()->SetSymmetryDesInitValue(chSymmetryDESInitValue, lInitValueLen); 
 							SetDecryptAES(pSymmetryAESDlg->GetAESKeySizeType(), pSymmetryAESDlg->GetAESModeType());
 						}
 						break;
@@ -957,33 +957,33 @@ CEncryptAlgorithmDlg::SetDecryptDES(SymmetryDESDlg::SYMMETRY_TABLE_DES_TYPE eDES
 {
 	switch(eDES) {
 		case SymmetryDESDlg::SYMMETRY_TABLE_DES_DES:
-			EncryptIF::Instance()->SetEncryptSymmetryDES(EncryptIF::ENCRYPTSYMMETRYDES_DES);
+			EnDecryptIF::Instance()->SetEncryptSymmetryDES(EnDecryptIF::ENCRYPTSYMMETRYDES_DES);
 			break;
 		case SymmetryDESDlg::SYMMETRY_TABLE_DES_3DES:
-			EncryptIF::Instance()->SetEncryptSymmetryDES(EncryptIF::ENCRYPTSYMMETRYDES_3DES);
+			EnDecryptIF::Instance()->SetEncryptSymmetryDES(EnDecryptIF::ENCRYPTSYMMETRYDES_3DES);
 			break;
 		default:
-			EncryptIF::Instance()->SetEncryptSymmetryDES(EncryptIF::ENCRYPTSYMMETRYDES_INVALID);
+			EnDecryptIF::Instance()->SetEncryptSymmetryDES(EnDecryptIF::ENCRYPTSYMMETRYDES_INVALID);
 			break;
 	}
 	switch(eDESMode) {
 		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_ECB:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_ECB);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_ECB);
 			break;
 		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_CBC:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CBC);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_CBC);
 			break;
 		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_CFB:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CFB);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_CFB);
 			break;
 		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_OFB:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_OFB);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_OFB);
 			break;
 		case SymmetryDESDlg::SYMMETRY_TABLE_DESMODE_CTR:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CTR);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_CTR);
 			break;
 		default:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_INVALID);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_INVALID);
 			break;
 	}
 }
@@ -993,36 +993,36 @@ CEncryptAlgorithmDlg::SetDecryptAES(SymmetryAESDlg::SYMMETRY_TABLE_AESKEYLEN_TYP
 {
 	switch(eAESKeySize) {
 		case SymmetryAESDlg::SYMMETRY_TABLE_AESKEYLEN_BIT128:
-			EncryptIF::Instance()->SetEncryptSymmetryAESKeySize(EncryptIF::ENCRYPTSYMMETRYAESKEYSIZE_BIT128);
+			EnDecryptIF::Instance()->SetEncryptSymmetryAESKeySize(EnDecryptIF::ENCRYPTSYMMETRYAESKEYSIZE_BIT128);
 			break;
 		case SymmetryAESDlg::SYMMETRY_TABLE_AESKEYLEN_BIT192:
-			EncryptIF::Instance()->SetEncryptSymmetryAESKeySize(EncryptIF::ENCRYPTSYMMETRYAESKEYSIZE_BIT192);
+			EnDecryptIF::Instance()->SetEncryptSymmetryAESKeySize(EnDecryptIF::ENCRYPTSYMMETRYAESKEYSIZE_BIT192);
 			break;
 		case SymmetryAESDlg::SYMMETRY_TABLE_AESKEYLEN_BIT256:
-			EncryptIF::Instance()->SetEncryptSymmetryAESKeySize(EncryptIF::ENCRYPTSYMMETRYAESKEYSIZE_BIT256);
+			EnDecryptIF::Instance()->SetEncryptSymmetryAESKeySize(EnDecryptIF::ENCRYPTSYMMETRYAESKEYSIZE_BIT256);
 			break;
 		default:
-			EncryptIF::Instance()->SetEncryptSymmetryAESKeySize(EncryptIF::ENCRYPTSYMMETRYAESKEYSIZE_INVALID);
+			EnDecryptIF::Instance()->SetEncryptSymmetryAESKeySize(EnDecryptIF::ENCRYPTSYMMETRYAESKEYSIZE_INVALID);
 			break;
 	}
 	switch(eAESMode) {
 		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_ECB:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_ECB);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_ECB);
 			break;
 		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_CBC:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CBC);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_CBC);
 			break;
 		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_CFB:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CFB);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_CFB);
 			break;
 		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_OFB:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_OFB);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_OFB);
 			break;
 		case SymmetryAESDlg::SYMMETRY_TABLE_AESMODE_CTR:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_CTR);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_CTR);
 			break;
 		default:
-			EncryptIF::Instance()->SetEncryptSymmetryMode(EncryptIF::ENCRYPTSYMMETRYMODE_INVALID);
+			EnDecryptIF::Instance()->SetEncryptSymmetryMode(EnDecryptIF::ENCRYPTSYMMETRYMODE_INVALID);
 			break;
 	}
 }
