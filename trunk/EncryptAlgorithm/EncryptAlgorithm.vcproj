@@ -306,7 +306,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\Algorithm\EncryptIF.cpp"
+					RelativePath="..\Algorithm\EnDecryptIF.cpp"
 					>
 				</File>
 				<File
@@ -329,7 +329,7 @@
 						>
 					</File>
 					<File
-						RelativePath="..\Algorithm\groupinc\EncryptIF.h"
+						RelativePath="..\Algorithm\groupinc\EnDecryptIF.h"
 						>
 					</File>
 					<File
