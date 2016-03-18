@@ -16,13 +16,17 @@
 */
 #include "stdafx.h"
 
-#ifndef ENCRYPTIF_H
-#include "EncryptIF.h"
+#ifndef ENDECRYPTIF_H
+#include "EnDecryptIF.h"
 #endif
 
-EncryptIF* EncryptIF::m_pInstance = NULL;
+#include <string.h>
+//#include "openssl\\evp.h"
+//#pragma comment( lib, "..\\Algorithm\\ssl\\lib\\libeay32.lib")
 
-EncryptIF::EncryptIF():
+EnDecryptIF* EnDecryptIF::m_pInstance = NULL;
+
+EnDecryptIF::EnDecryptIF():
 m_eEncrypt(ENCRYPT_NON),
 m_eEncryptSymmetryMode(ENCRYPTSYMMETRYMODE_NON),
 m_eEncryptSymmetry(ENCRYPTSYMMETRY_NON),
@@ -35,7 +39,7 @@ m_pAES(NULL)
 	memset(m_chSymmetryDesInitValue, 0x00, sizeof(char)*STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH);
 }
 
-EncryptIF::~EncryptIF()
+EnDecryptIF::~EnDecryptIF()
 {
 	if (NULL != m_pDES) {
 		delete m_pDES;
@@ -48,7 +52,7 @@ EncryptIF::~EncryptIF()
 }
 
 DES* 
-EncryptIF::GetDES()
+EnDecryptIF::GetDES()
 {
 	if (NULL == m_pDES) {
 		m_pDES = new DES;
@@ -57,7 +61,7 @@ EncryptIF::GetDES()
 }
 
 AES* 
-EncryptIF::GetAES()
+EnDecryptIF::GetAES()
 {
 	if (NULL == m_pAES) {
 		m_pAES = new AES;
@@ -65,17 +69,17 @@ EncryptIF::GetAES()
 	return m_pAES;
 }
 
-EncryptIF* 
-EncryptIF::Instance(void)
+EnDecryptIF* 
+EnDecryptIF::Instance(void)
 {
 	if (NULL == m_pInstance) {
-		m_pInstance = new EncryptIF;
+		m_pInstance = new EnDecryptIF;
 	}
 	return m_pInstance;
 }
 
 void 
-EncryptIF::Destroy()
+EnDecryptIF::Destroy()
 {
 	if (NULL != m_pInstance) {
 		delete m_pInstance;
@@ -84,13 +88,13 @@ EncryptIF::Destroy()
 }
 
 bool 
-EncryptIF::Encrypt(char *dataIn, long dataInlen, char *dataOut)
+EnDecryptIF::Encrypt(char *dataIn, long dataInlen, char *dataOut)
 {
 	return EncryptDecrypt(ENCRYPTDECRYPT_ENCRYPT, dataIn, dataInlen, dataOut);
 }
 
 bool 
-EncryptIF::Decrypt(char *dataIn, long dataInlen, char *dataOut)
+EnDecryptIF::Decrypt(char *dataIn, long dataInlen, char *dataOut)
 {
 	return EncryptDecrypt(ENCRYPTDECRYPT_DECRYPT, dataIn, dataInlen, dataOut);
 }
@@ -98,8 +102,9 @@ EncryptIF::Decrypt(char *dataIn, long dataInlen, char *dataOut)
 
 //加解密  由于不同加密解决方式不一样, 为统一接口请在加解密前根据不同的加解密算法设置相应数据
 bool 
-EncryptIF::EncryptDecrypt(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut)
+EnDecryptIF::EncryptDecrypt(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut)
 {
+	OpenSslSymmetryExample();
 	switch(m_eEncrypt) {
 		case ENCRYPT_SYMMETRY:
 			switch(m_eEncryptSymmetry) {
@@ -123,7 +128,7 @@ EncryptIF::EncryptDecrypt(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataI
 }
 
 bool 
-EncryptIF::EncryptDecryptSymmetryDES(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut)
+EnDecryptIF::EncryptDecryptSymmetryDES(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut)
 {
 	//文件大小变化: 加密->增加0~8个字节 解密->减少加0~8个字节
 	bool bEncryptDES = ENCRYPTDECRYPT_ENCRYPT==eEncrypt?DES::DES_ENCRYPT:DES::DES_DECRYPT;
@@ -169,7 +174,7 @@ EncryptIF::EncryptDecryptSymmetryDES(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn,
 AES* pAEStest = NULL; 
 
 bool 
-EncryptIF::EncryptDecryptSymmetryAES(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut)
+EnDecryptIF::EncryptDecryptSymmetryAES(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut)
 {
 	AES::AES_ENCRYPTDECRYPT_TYPE eAESEncrypt = ENCRYPTDECRYPT_ENCRYPT==eEncrypt?AES::AES_ENCRYPTDECRYPT_ENCRYPT:AES::AES_ENCRYPTDECRYPT_DECRYPT;
 	AES::AES_KEYSIZE eAESKeySize = AES::AES_KEYSIZE_NON;
@@ -206,7 +211,7 @@ EncryptIF::EncryptDecryptSymmetryAES(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn,
 }
 
 void 
-EncryptIF::SetSymmetryKey(const char* chSymmetryKey, long lKeyLen)
+EnDecryptIF::SetSymmetryKey(const char* chSymmetryKey, long lKeyLen)
 {
 	if (lKeyLen > STATIC_CONST_LONG_SYMMETRYKEYLENGTH) {
 		return;
@@ -216,12 +221,106 @@ EncryptIF::SetSymmetryKey(const char* chSymmetryKey, long lKeyLen)
 }
 
 void 
-EncryptIF::SetSymmetryDesInitValue(const char* chSymmetryDesInitValue, long lInitValueLen)
+EnDecryptIF::SetSymmetryDesInitValue(const char* chSymmetryDesInitValue, long lInitValueLen)
 {
 	if (lInitValueLen > STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH) {
 		return;
 	}
 	memset(m_chSymmetryDesInitValue, 0x00, sizeof(char)*STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH);
 	memcpy(m_chSymmetryDesInitValue, chSymmetryDesInitValue, lInitValueLen);
+}
+
+
+bool 
+EnDecryptIF::OpenSslSymmetryExample()
+{
+	int                                ret,which=1;
+	EVP_CIPHER_CTX             ctx;
+	const EVP_CIPHER      *cipher;
+	unsigned char        key[24],iv[8],in[100],out[108],de[100];
+	int                                i,len,inl,outl,total=0;
+	for(i=0;i<24;i++) {
+		memset(&key[i],i,1);
+	}
+	for(i=0;i<8;i++) {
+		memset(&iv[i],i,1);
+	}
+	for(i=0;i<100;i++) {
+		memset(&in[i],i,1);
+	}
+
+	EVP_CIPHER_CTX_init(&ctx);
+	printf("please select :\n");
+	printf("1: EVP_des_ede3_ofb\n");
+	printf("2: EVP_des_ede3_cbc\n");
+
+	scanf("%d",&which);
+	if(which==1)
+		cipher=EVP_des_ede3_ofb();
+	else
+		cipher=EVP_des_ede3_cbc(); 
+
+	ret=EVP_EncryptInit_ex(&ctx,cipher,NULL,key,iv);
+	if(ret!=1) {
+		printf("EVP_EncryptInit_ex err1!\n");
+		return false;
+	}
+
+	inl=50;
+	len=0;
+	EVP_EncryptUpdate(&ctx,out+len,&outl,in,inl);
+
+	len+=outl;
+	EVP_EncryptUpdate(&ctx,out+len,&outl,in+50,inl);
+
+	len+=outl;
+	EVP_EncryptFinal_ex(&ctx,out+len,&outl);
+
+	len+=outl;
+	printf("加密结果长度：%d\n",len);
+
+	/* 解密 */
+	EVP_CIPHER_CTX_cleanup(&ctx);
+	EVP_CIPHER_CTX_init(&ctx);
+	ret=EVP_DecryptInit_ex(&ctx,cipher,NULL,key,iv);
+
+	if(ret!=1) {
+		printf("EVP_DecryptInit_ex err1!\n");
+		return false;
+	}
+
+	total=0;
+	EVP_DecryptUpdate(&ctx,de+total,&outl,out,44);
+	total+=outl;
+	EVP_DecryptUpdate(&ctx,de+total,&outl,out+44,len-44);
+	total+=outl;
+	ret=EVP_DecryptFinal_ex(&ctx,de+total,&outl);
+	total+=outl;
+	if(ret!=1) {
+		EVP_CIPHER_CTX_cleanup(&ctx);
+		printf("EVP_DecryptFinal_ex err\n");
+		return false;
+	}
+
+	if((total!=100) || (memcmp(de,in,100))) {
+		printf("err!\n");
+		return false;
+	}
+
+	EVP_CIPHER_CTX_cleanup(&ctx);
+	printf("test ok!\n");
+	return true;
+}
+
+bool 
+EnDecryptIF::OpenSslUnsymmetryExample()
+{
+	return false;
+}
+
+bool 
+EnDecryptIF::OpenSslHashExample()
+{
+	return false;
 }
 /* EOF */

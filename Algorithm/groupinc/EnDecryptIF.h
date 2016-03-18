@@ -15,8 +15,8 @@
 @Header $Header$
 */
 
-#ifndef ENCRYPTIF_H
-#define ENCRYPTIF_H
+#ifndef ENDECRYPTIF_H
+#define ENDECRYPTIF_H
 
 #ifndef DES_H
 #include "DES.h"
@@ -26,17 +26,17 @@
 #include "AES.h"
 #endif
 
-class EncryptIF
+class EnDecryptIF
 {
 public:
-	static EncryptIF* Instance(void);
+	static EnDecryptIF* Instance(void);
 	static void Destroy();
 
 	//加解密 由于不同加密解决方式不一样, 为统一接口请在加解密前根据不同的加解密算法设置相应数据
 	bool Encrypt(char *dataIn, long dataInlen, char *dataOut);
 	bool Decrypt(char *dataIn, long dataInlen, char *dataOut);
 
-	~EncryptIF();
+	~EnDecryptIF();
 
 	enum ENCRYPT_TYPE 
 	{
@@ -106,7 +106,7 @@ public:
 	void SetSymmetryKey(const char* chSymmetryKey, long lKeyLen);
 	void SetSymmetryDesInitValue(const char* chSymmetryDesInitValue, long lInitValueLen);
 protected:
-	EncryptIF();
+	EnDecryptIF();
 
 private:
 	DES* GetDES();
@@ -119,12 +119,16 @@ private:
 	bool EncryptDecrypt(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut);
 	bool EncryptDecryptSymmetryDES(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut);
 	bool EncryptDecryptSymmetryAES(ENCRYPTDECRYPT_TYPE eEncrypt, char *dataIn, long dataInlen, char *dataOut);
+
+	bool OpenSslSymmetryExample();
+	bool OpenSslUnsymmetryExample();
+	bool OpenSslHashExample();
 public:
 	static const long STATIC_CONST_LONG_SYMMETRYKEYLENGTH = 32;				//DES加密 16位密码 AES加密 32位密码
 	static const long STATIC_CONST_LONG_SYMMETRYDESINITVALUELENGTH = 16;	//DES加密 8位初始向量/计数值 AES加密 16位初始向量/计数值
 protected:
 private:
-	static EncryptIF* m_pInstance;
+	static EnDecryptIF* m_pInstance;
 	ENCRYPT_TYPE m_eEncrypt;
 	ENCRYPTSYMMETRYMODE_TYPE m_eEncryptSymmetryMode;
 	ENCRYPTSYMMETRY_TYPE m_eEncryptSymmetry;
@@ -137,4 +141,4 @@ private:
 	AES* m_pAES;
 };
 
-#endif // ENCRYPTIF_H
+#endif // ENDECRYPTIF_H
