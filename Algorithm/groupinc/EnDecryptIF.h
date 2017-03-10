@@ -26,6 +26,8 @@
 #include "AES.h"
 #endif
 
+#include "openssl/evp.h"
+
 class EnDecryptIF
 {
 public:
